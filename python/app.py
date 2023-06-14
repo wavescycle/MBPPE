@@ -2,10 +2,11 @@ from http.client import BAD_REQUEST
 from flask import Flask, request, send_file, jsonify, abort, make_response
 from flask_restful import Resource, Api
 from flask_cors import CORS
-from marshmallow import ValidationError, EXCLUDE
+from marshmallow import ValidationError, EXCLUDE, Schema
 from scipy.io import loadmat
 from process import butter_filter, power_spectrum, de, time_frequence, frequence, ica
 from customSchema import DataSchema, FilterSchema, BasicSchema
+from utils import get_data
 import numpy as np
 import io
 import load
@@ -14,54 +15,113 @@ import copy
 app = Flask(__name__)
 api = Api(app)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
-
-RAW = dict()
-RAW_FILTER = dict()
-RAW_FREQ = dict()
-FILETYPE = ""
+'''
+ {
+    'Pre_Process': {'Raw': None, 'Filter': None, 'ICA': None, 'Filter_ICA': None},
+    'Feature_Ext': {
+        'Raw': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        'Filter': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        'ICA': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        'Filter_ICA': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None}
+    },
+    'Info': {'sample_rate': 200}
+}
+'''
+DATA_STORAGE_TEMPLATE = {
+    'Pre_Process': {},
+    'Feature_Ext': {},
+    'Info': {'sample_rate': 200}
+}
+DATA_STORAGE = dict()
 ALLOWED_EXTENSIONS = {'mat', 'npz', 'xlsx'}
 
 
-def transformData(RAW):
-    return getattr(load, FILETYPE)(RAW)
+def transform_data(raw, file_type):
+    return getattr(load, file_type)(raw)
 
 
 def allowed_file(filename):
-    global FILETYPE
     if '.' in filename:
-        FILETYPE = filename.rsplit('.', 1)[1].lower()
-    return FILETYPE in ALLOWED_EXTENSIONS
+        file_type = filename.rsplit('.', 1)[1].lower()
+        return file_type in ALLOWED_EXTENSIONS, file_type
+    else:
+        return False, None
 
 
-def streamData(data, aixs=True):
-    if (aixs):
-        xAixs = np.arange(0, data.shape[1])
-        data = np.vstack([xAixs, data])
+def stream_data(data, axis=True):
+    if axis:
+        xAxis = np.arange(0, data.shape[1])
+        data = np.vstack([xAxis, data])
     bytestream = io.BytesIO()
     np.save(bytestream, data)
     bytestream.seek(0)
     return bytestream
 
-class BaseParams():
-    def __init__(self):
-        if request.method == 'GET':
-            params = request.args
-        else:
-            params = request.json
-        try:
-            params = BasicSchema(unknown=EXCLUDE).load(params)
-            filename = self.filename
-            self.channels = params['channels']
-            self.start = params['start']
-            self.end = params['end']
-            if params['isFilter']:
-                self.storage = RAW_FILTER[filename]
-                self.source = RAW_FILTER[filename]['filter']
+
+def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', source_path='Pre_Process'):
+    def decorator(fuc):
+        def wrapper(*args, filename):
+            if request.method == 'GET':
+                params = request.args
             else:
-                self.storage = RAW[filename]
-                self.source = RAW[filename]['raw']
-        except ValidationError as e:
-            abort(BAD_REQUEST, str(e.messages))
+                params = request.json
+
+            try:
+                if schema != Schema:
+                    params = schema(unknown=EXCLUDE).load(params)
+            except ValidationError as e:
+                abort(BAD_REQUEST, str(e.messages))
+
+            DATA_STORAGE.setdefault(filename, copy.deepcopy(DATA_STORAGE_TEMPLATE))
+
+            if params:
+                pre_data = params.get('pre_data', 'Raw')
+            else:
+                pre_data = 'Raw'
+
+            info = DATA_STORAGE[filename]['Info']
+            storage = DATA_STORAGE[filename][storage_path]
+            source = DATA_STORAGE[filename][source_path]
+
+            modify_source_type = modify_storage_type = pre_data
+
+            if request.method == 'POST' and storage_path == 'Pre_Process':
+                modify_storage_type = f"{pre_data}_{storage_type}" if pre_data != 'Raw' else storage_type
+
+            if storage_path == 'Feature_Ext':
+                # modify_storage_type = pre_data
+                storage.setdefault(modify_storage_type, {})
+                storage[modify_storage_type].setdefault(storage_type, None)
+            else:
+                # modify_storage_type = f"{pre_data}_{storage_type}" if pre_data != 'Raw' else storage_type
+                storage.setdefault(modify_storage_type, None)
+
+            source.setdefault(modify_source_type, None)
+
+            return fuc(*args, filename=filename, info=info, storage=storage, modify_storage_type=modify_storage_type,
+                       source=source[modify_source_type],
+                       params=params)
+
+        return wrapper
+
+    return decorator
+
+
+class PreData(Resource):
+    def get(self, filename):
+        params = request.args
+        feature_ext = params.get('feature_ext')
+
+        if feature_ext is None:
+            pre_data = DATA_STORAGE[filename]['Pre_Process']
+            pre_data_keys = [k for k, v in pre_data.items() if v is not None]
+        else:
+            try:
+                pre_data = DATA_STORAGE[filename]['Feature_Ext']
+                pre_data_keys = [key for key, values in pre_data.items() if values.get(feature_ext) is not None]
+            except KeyError as e:
+                pre_data_keys = []
+        return jsonify(pre_data_keys)
 
 
 class Status(Resource):
@@ -73,255 +133,231 @@ class FileList(Resource):
     def get(self):
         params = request.args
         try:
-            params = BasicSchema(unknown=EXCLUDE).load(params)
+            BasicSchema(unknown=EXCLUDE).load(params)
         except ValidationError as e:
             abort(BAD_REQUEST, str(e.messages))
-        self.chennels = params['channels']
-        if params['isFilter']:
-            data = RAW_FILTER.keys()
-        else:
-            data = RAW.keys()
+
+        data = DATA_STORAGE.keys()
         return jsonify(list(data))
-        '''
-        isProcess = params['isProcess']
-        if isProcess:
-            if params['isFilter']: return jsonify(list(RAW_FILTER.keys()))
-            else: return jsonify(list(RAW.keys()))
-        else:
-            # Match global variables by string
-            # e.g {"isHeatMap":True,"isPSD":False,"isFilter":True,"isDe":False} to RAW_FILTER_HEATMAP
-            variabel_name = 'RAW'
-            isFilter = ''
-            method = ''
-            for k, v in params.items():
-                if v:
-                    if k == 'isFilter': isFilter = '_FILTER'
-                    else:
-                        method = k.replace('is', '_').upper()
-            variabel_name = variabel_name + isFilter + method
-            return jsonify(list(globals()[variabel_name].keys()))
-        '''
-
-
-'''
-      {
-        Filename: "2016-05-03",
-        SampleRate: "200Hz",
-        Filter: "False",
-      },
-'''
 
 
 class FileStatus(Resource):
     def get(self):
-        fileStatus = list()
-        for k in RAW.keys():
-            fileStatus.append({
-                'Filename': k,
-                'SampleRate': RAW_FREQ[k],
-                'Filter': k in RAW_FILTER.keys()
+        file_status = list()
+        for k in DATA_STORAGE.keys():
+            file_status.append({
+                'Filename': k
             })
-        return jsonify(fileStatus)
+        return jsonify(file_status)
 
 
 class Data(Resource):
-    def get(self, filename):
-        data = request.args
-        try:
-            data = DataSchema(unknown=EXCLUDE).load(data, partial=False)
-        except ValidationError as e:
-            abort(BAD_REQUEST, str(e.messages))
-        channels = data['channels']
-        choosedData = RAW[filename]['raw'][channels]
-        return send_file(streamData(choosedData, True),
-                         mimetype="application/octet-stream")
 
-    def post(self, filename):
+    @init_data(DataSchema)
+    def get(self, **kwargs):
+        data, is_none = get_data(**kwargs)
+
+        print(data)
+
+        return send_file(stream_data(data, True), mimetype="application/octet-stream")
+
+    @init_data()
+    def post(self, **kwargs):
         freq = request.form['freq']
         file = request.files['file']
-        if file and allowed_file(filename):
+        filename = kwargs['filename']
+        storage = kwargs['storage']
+        storage_type = kwargs['modify_storage_type']
+        info = kwargs['info']
+        is_allowed, file_type = allowed_file(filename)
+        if file and is_allowed:
             # read file use stream
-            RAW[filename] = dict()
-            RAW[filename]['raw'] = transformData(loadmat(file.stream))
-            RAW_FREQ[filename] = int(freq)
+            storage[storage_type] = transform_data(loadmat(file.stream), file_type)
+            info['sample_rate'] = int(freq)
             return 'CREATED', 201
         else:
             return 'Not support file', 400
 
 
 class Filter(Resource):
-    def _handle(self, filename):
-        # pick data with channels
-        raw = copy.deepcopy(RAW[filename]['raw'])
-        # filter data
-        cutoff = list(filter(lambda it: it is not None, [self.low, self.high]))
-        if filename not in RAW_FILTER:
-            RAW_FILTER[filename] = dict()
-        freq = RAW_FREQ[filename]
-        RAW_FILTER[filename]['filter'] = butter_filter(raw,
-                                                       btype=self.method,
-                                                       cutoff=cutoff,
-                                                       fs=freq)
-        return True
+    @init_data(FilterSchema, storage_type='Filter')
+    def get(self, **kwargs):
+        data, is_none = get_data(**kwargs)
 
-    def get(self, filename):
-        params = request.args
-        channels = params.getlist('channels', type=int)
-        if filename in RAW_FILTER:
-            data = RAW_FILTER[filename]['filter'][channels]
-            return send_file(streamData(data),
-                             mimetype="application/octet-stream")
-        else:
+        if is_none:
             abort(BAD_REQUEST, 'You need do filter first')
-
-    def post(self, filename):
-        params = request.json
-        try:
-            params = FilterSchema(unknown=EXCLUDE).load(params)
-            self.method = params['method']
-            # self.channels = params['channels']
-            self.low = params['low']
-            self.high = params['high']
-        except ValidationError as e:
-            abort(BAD_REQUEST, str(e.messages))
-
-        if self._handle(filename):
-            return 'OK'
         else:
-            return 'Bad request', 400
+            return send_file(stream_data(data), mimetype="application/octet-stream")
+
+    @init_data(FilterSchema, storage_type='Filter')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        params = kwargs['params']
+        storage_type = kwargs['modify_storage_type']
+
+        print(storage_type)
+
+        method = params['method']
+        low = params['low']
+        high = params['high']
+
+        raw = copy.deepcopy(source)
+        # filter data
+        cutoff = list(filter(lambda it: it is not None, [low, high]))
+        storage[storage_type] = butter_filter(raw, btype=method, cutoff=cutoff, fs=info['sample_rate'])
+
+        return 'OK'
 
 
 class ICA(Resource):
-    def _handle(self):
-        raw = self.source
-        self.storage = ica(raw)
 
-    def get(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        if 'ica' not in self.storage:
-            self._handle()
-        return send_file(streamData(self.storage['ica'], False),
-                         mimetype="application/octet-stream")
+    @init_data(BasicSchema, storage_type='ICA')
+    def get(self, **kwargs):
+        data, is_none = get_data(**kwargs)
 
-    def post(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+        if is_none:
+            abort(BAD_REQUEST, 'You need do ICA first')
+        else:
+            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+
+    @init_data(BasicSchema, storage_type='ICA')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        storage_type = kwargs['modify_storage_type']
+        storage[storage_type] = ica(copy.deepcopy(source))
         return 'OK'
 
 
 class PSD(Resource):
-    '''
-    if request.method == 'GET':
-        params = request.args
-    else:
-        params = request.json
-    try:
-        params = BasicSchema(unknown=EXCLUDE).load(params)
-        self.filename = filename
-        if params['isFilter']:
-            self.storage = RAW_FILTER[filename]
-            self.source = RAW_FILTER[filename]['filter']
+
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
+    def get(self, **kwargs):
+        data, is_none = get_data(feature_ext="PSD", **kwargs)
+
+        if is_none:
+            abort(BAD_REQUEST, 'You need do PSD first')
         else:
-            self.storage = RAW[filename]
-            self.source = RAW[filename]['raw']
-    except ValidationError as e:
-        abort(BAD_REQUEST, str(e.messages))
-    '''
-    def _handle(self):
-        raw = copy.deepcopy(self.source)
-        freq = RAW_FREQ[self.filename]
-        self.storage['psd'] = power_spectrum(raw, freq)
+            return send_file(stream_data(data, False), mimetype="application/octet-stream")
 
-    def get(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        if 'psd' not in self.storage:
-            self._handle()
-        return send_file(streamData(self.storage['psd'], False),
-                         mimetype="application/octet-stream")
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        storage_type = kwargs['modify_storage_type']
 
-    def post(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+        raw = copy.deepcopy(source)
+        freq = info['sample_rate']
+        storage[storage_type]['PSD'] = power_spectrum(raw, freq)
         return 'OK'
 
 
 class DE(Resource):
-    def _handle(self):
-        raw = copy.deepcopy(self.source)
-        freq = RAW_FREQ[self.filename]
-        self.storage['de'] = de(raw, fs=freq, win=freq)
 
-    def get(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        if 'de' not in self.storage:
-            self._handle()
-        return send_file(streamData(self.storage['de'], False),
-                         mimetype="application/octet-stream")
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
+    def get(self, **kwargs):
+        data, is_none = get_data(feature_ext="DE", **kwargs)
 
-    def post(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+        if is_none:
+            abort(BAD_REQUEST, 'You need do DE first')
+        else:
+            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        storage_type = kwargs['modify_storage_type']
+
+        raw = copy.deepcopy(source)
+        freq = info['sample_rate']
+        storage[storage_type]['DE'] = de(raw, fs=freq, win=freq)
         return 'OK'
 
 
 class Frequence(Resource):
-    def _handle(self):
-        raw = copy.deepcopy(self.source)
-        freq = RAW_FREQ[self.filename]
-        self.storage['frequence'] = frequence(raw,
-                                              self.channels,
-                                              self.start,
-                                              self.end,
-                                              fs=freq)
 
-    def get(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
+    def get(self, **kwargs):
+        data, is_none = get_data(feature_ext="Freq", **kwargs)
 
-        return send_file(streamData(self.storage['frequence'], True),
-                         mimetype="application/octet-stream")
+        if is_none:
+            abort(BAD_REQUEST, 'You need do Frequence first')
+        else:
+            return send_file(stream_data(data, True), mimetype="application/octet-stream")
 
-    def post(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        params = kwargs['params']
+        storage_type = kwargs['modify_storage_type']
+
+        channels = params['channels']
+        start = params['start']
+        end = params['end']
+
+        raw = copy.deepcopy(source)
+        freq = info['sample_rate']
+        storage[storage_type]['Freq'] = frequence(raw, channels, start, end, fs=freq)
         return 'OK'
 
 
 class TimeFrequence(Resource):
-    def _handle(self):
-        raw = copy.deepcopy(self.source)
-        freq = RAW_FREQ[self.filename]
-        self.storage['timefrequence'], self.maxValue = time_frequence(
-            raw, self.channels, self.start, self.end, fs=freq)
 
-    def get(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        # if 'timefrequence' not in self.storage:
-        self._handle()
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
+    def get(self, **kwargs):
+        data, is_none = get_data(feature_ext="Time_Freq", **kwargs)
+        info = kwargs['info']
+
+        if is_none:
+            abort(BAD_REQUEST, 'You need do Time_Freq first')
+
         response = make_response(
-            send_file(streamData(self.storage['timefrequence'], False),
-                      mimetype="application/octet-stream"))
-        response.headers['MaxValue'] = self.maxValue
+            send_file(stream_data(data, False), mimetype="application/octet-stream"))
+        response.headers['MaxValue'] = info['maxValue']
         response.headers['Access-Control-Expose-Headers'] = 'MaxValue'
         return response
 
-    def post(self, filename):
-        self.filename = filename
-        BaseParams.__init__(self)
-        self._handle()
+    @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        params = kwargs['params']
+        storage_type = kwargs['modify_storage_type']
+
+        channels = params['channels']
+        start = params['start']
+        end = params['end']
+
+        raw = copy.deepcopy(source)
+        freq = info['sample_rate']
+        storage[storage_type]['Time_Freq'], info['maxValue'] = time_frequence(raw, channels, start, end, fs=freq)
         return 'OK'
 
 
+@app.after_request
+def after_request_func(response):
+    # url = request.url
+    # method = request.method
+    # white_list = ['data', 'filter', 'ica', 'psd', 'de', 'frequence', 'timefrequence']
+    #
+    # if method == 'GET' or method == 'POST':
+    #     for word in white_list:
+    #         if word in url:
+    #             print(DATA_STORAGE)
+
+    return response
+
+
 api.add_resource(Status, '/status')
+api.add_resource(PreData, '/predata/<string:filename>')
 api.add_resource(Data, '/data/<string:filename>')
 api.add_resource(FileList, '/filelist')
 api.add_resource(FileStatus, '/filestatus')
@@ -332,8 +368,6 @@ api.add_resource(DE, '/de/<string:filename>')
 api.add_resource(Frequence, '/frequence/<string:filename>')
 api.add_resource(TimeFrequence, '/timefrequence/<string:filename>')
 
-'''
-TODO: [x] filter pick channels
-'''
 if __name__ == '__main__':
+    app.debug = True
     app.run()

@@ -1,41 +1,41 @@
 <template>
   <div class="container">
     <el-form
-      :model="form"
-      class="demo-form-inline"
-      ref="formRef"
-      :rules="rules"
-      :inline="true"
-      label-width="80px"
+        :model="form"
+        class="demo-form-inline"
+        ref="formRef"
+        :rules="rules"
+        :inline="true"
+        label-width="80px"
     >
-      <el-form-item label="Filename" prop="filename" style="width: 220px">
+      <el-form-item label="Filename" prop="name" style="width: 220px">
         <el-select
-          v-model="form.filename"
-          :placeholder="placeholder"
-          @change="fileChange"
+            v-model="form.name"
+            :placeholder="placeholder"
+            @change="fileChange"
         >
           <!-- :loading="true" -->
           <el-option
-            v-for="(file, i) of form.fileList"
-            :key="i"
-            :label="file"
-            :value="file"
+              v-for="(file, i) of form.fileList"
+              :key="i"
+              :label="file"
+              :value="file"
           >
           </el-option>
         </el-select>
       </el-form-item>
       <el-form-item
-        label="Chart"
-        prop="type"
-        @change="chartChange"
-        style="width: 200px"
+          label="Chart"
+          prop="type"
+          @change="chartChange"
+          style="width: 200px"
       >
         <el-select v-model="form.type">
           <el-option
-            v-for="item in options"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
+              v-for="item in options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
           />
         </el-select>
         <!-- <el-radio-group v-model="form.type" size="small">
@@ -46,32 +46,40 @@
         </el-radio-group> -->
       </el-form-item>
       <el-form-item
-        label="Channels"
-        prop="channels"
-        v-if="form.type !== 'psdChart'"
-        style="width: 240px"
+          label="Channels"
+          prop="channels"
+          v-if="form.type !== 'psdChart'"
+          style="width: 240px"
       >
         <el-select
-          v-model="form.channels"
-          :multiple="multiple"
-          collapse-tags
-          :placeholder="channelsPlaceholder"
-          :multiple-limit="5"
+            v-model="form.channels"
+            :multiple="multiple"
+            collapse-tags
+            :placeholder="channelsPlaceholder"
+            :multiple-limit="5"
         >
           <el-option
-            v-for="(file, i) of CH_NAMES"
-            :key="i"
-            :label="file"
-            :value="i"
+              v-for="(file, i) of CH_NAMES"
+              :key="i"
+              :label="file"
+              :value="i"
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="Filtered" prop="isFilter">
-        <el-switch
-          v-model="form.isFilter"
-          :loading="loading"
-          :before-change="checkFilter"
-        />
+      <el-form-item label="PreData" prop="preData">
+        <el-select
+            v-model="form.preData"
+            @visible-change="getPreDataList"
+            :loading="getPreDataLoading"
+        >
+          <el-option
+              v-for="(preData, i) of form.preDataList"
+              :key="i"
+              :label="preData"
+              :value="preData"
+          >
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
@@ -84,28 +92,31 @@
 
 <script>
 import * as echarts from "echarts";
-import { ElMessage } from "element-plus";
+import {ElMessage} from "element-plus";
 import charts from "../utils/charts";
-import { getFileList } from "../utils/api";
-import { reactive, computed, ref, onMounted } from "vue";
-import { CH_NAMES } from "../config/config.json";
+import {getFileList, getPreData} from "../utils/api";
+import {reactive, computed, ref, onMounted} from "vue";
+import {CH_NAMES} from "../config/config.json";
 
 export default {
   name: "basecharts",
   setup() {
     const rules = {
-      filename: [
-        { required: true, message: "Select a file", trigger: "blur" },
+      name: [
+        {required: true, message: "Select a file", trigger: "blur"},
       ],
+      preData: [{required: true, message: "Select the pre data", trigger: "blur"}],
     };
     const formRef = ref(null);
     const main = ref(null);
     const loading = ref(null);
+    const getPreDataLoading = ref(null)
     const form = reactive({
-      filename: "",
+      name: "",
       channels: [],
       fileList: [],
-      isFilter: false,
+      preData: "",
+      preDataList: [],
       type: "lineChart",
     });
     const options = [
@@ -126,6 +137,12 @@ export default {
         label: "TimeFrequence",
       },
     ];
+    const featureExtMap = {
+      'lineChart': '',
+      'psdChart': 'PSD',
+      'freqChart': 'Freq',
+      'timeFreqChart': 'Time_Freq'
+    }
     const width = 1200;
     const height = 600;
     let chart;
@@ -135,15 +152,17 @@ export default {
     });
 
     let placeholder = computed(() =>
-      form.fileList.length ? "Select" : "Upload data first"
+        form.fileList.length ? "Select" : "Upload data first"
     );
     let channelsPlaceholder = computed(() =>
-      form.type === "lineChart" ? "10 channels are used by default" : "Select a channel"
+        form.type === "lineChart" ? "10 channels are used by default" : "Select a channel"
     );
     let multiple = computed(() => (form.type === "lineChart" ? true : false));
     let chartChange = () => {
       if (form.type === "lineChart") form.channels = [];
       else form.channels = "";
+      form.preDataList.length = 0;
+      form.preData = ''
     };
     onMounted(() => {
       const myChart = echarts.init(main.value, null, {
@@ -155,18 +174,30 @@ export default {
     });
 
     const fileChange = () => {
-      form.isFilter = false;
+      form.preDataList.length = 0;
+      form.preData = ''
     };
+
+    const getPreDataList = async (visible) => {
+      getPreDataLoading.value = true
+      if (visible) {
+        let res = await getPreData(form.name, featureExtMap[form.type])
+        if (res.status === 200) {
+          form.preDataList = res.data
+          getPreDataLoading.value = false
+        }
+      }
+    }
     const checkFilter = async () => {
       loading.value = true;
       if (form.isFilter) {
         form.isFilter = false;
       } else {
         const res = await getFileList(true);
-        if (res.data.indexOf(form.filename) !== -1) {
+        if (res.data.indexOf(form.name) !== -1) {
           form.isFilter = true;
         } else {
-          ElMessage.error(`Filter the ${form.filename} first`);
+          ElMessage.error(`Filter the ${form.name} first`);
         }
       }
       loading.value = false;
@@ -185,8 +216,7 @@ export default {
             form.channels = alterChannels;
           }
           if (typeof chart[form.type] === "function") {
-            chart[form.type](form.filename, form.isFilter, form.channels);
-            // createChart(form.filename, form.channels, form.isFilter);
+            chart[form.type](form.name, form.preData, form.channels);
           } else {
             chart.errorChart();
             return false;
@@ -217,6 +247,8 @@ export default {
       checkFilter,
       CH_NAMES,
       onReset,
+      getPreDataList,
+      getPreDataLoading
     };
   },
 };

@@ -4,26 +4,34 @@
       <el-form-item label="Filename" prop="name">
         <el-select v-model="form.name" :placeholder="placeholder">
           <el-option
-            v-for="(file, i) of form.fileList"
-            :key="i"
-            :label="file"
-            :value="file"
+              v-for="(file, i) of form.fileList"
+              :key="i"
+              :label="file"
+              :value="file"
           >
           </el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="Method" prop="method">
         <el-radio-group v-model="form.method">
-          <el-radio-button label="PSD" />
-          <el-radio-button label="DE" />
+          <el-radio-button label="PSD"/>
+          <el-radio-button label="DE"/>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="Filtered" prop="filter">
-        <el-switch
-          v-model="form.filter"
-          :loading="loading"
-          :before-change="checkFilter"
-        />
+      <el-form-item label="PreData" prop="preData">
+        <el-select
+            v-model="form.preData"
+            @visible-change="getPreDataList"
+            :loading="getPreDataLoading"
+        >
+          <el-option
+              v-for="(preData, i) of form.preDataList"
+              :key="i"
+              :label="preData"
+              :value="preData"
+          >
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
@@ -34,47 +42,44 @@
 </template>
 
 <script>
-import { reactive, ref, computed } from "vue";
-import { getFileList, postPSD, postDE } from "../utils/api";
-import { ElMessage, ElLoading } from "element-plus";
+import {reactive, ref, computed} from "vue";
+import {getFileList, postPSD, postDE, getPreData} from "../utils/api";
+import {ElMessage, ElLoading} from "element-plus";
+
 export default {
   setup() {
     const loading = ref(null);
     const formRef = ref(null);
+    const getPreDataLoading = ref(null)
     const form = reactive({
       name: "",
       filter: false,
       method: "PSD",
       fileList: [],
+      preData: "",
+      preDataList: []
     });
 
     const rules = {
-      name: {
-        required: true,
-        message: "Select a file",
-        trigger: "blur",
-      },
-    };
+      name: {required: true, message: "Select a file", trigger: "blur"},
+      preData: {required: true, message: "Select the pre data", trigger: "blur"},
+    }
     getFileList().then((res) => {
       form.fileList = res.data;
     });
     let placeholder = computed(() =>
-      form.fileList?.length ? "Select" : "Upload data first"
+        form.fileList?.length ? "Select" : "Upload data first"
     );
-    const checkFilter = async () => {
-      loading.value = true;
-      if (form.filter) {
-        form.filter = false;
-      } else {
-        const res = await getFileList(true);
-        if (res.data.indexOf(form.name) !== -1) {
-          form.filter = true;
-        } else {
-          ElMessage.error(`Filter the ${form.name} first`);
+    const getPreDataList = async (visible) => {
+      getPreDataLoading.value = true
+      if (visible) {
+        let res = await getPreData(form.name)
+        if (res.status === 200) {
+          form.preDataList = res.data
+          getPreDataLoading.value = false
         }
       }
-      loading.value = false;
-    };
+    }
     const onSubmit = () => {
       formRef.value.validate(async (valid) => {
         if (valid) {
@@ -84,9 +89,9 @@ export default {
           });
           let res = null;
           if (form.method === "PSD") {
-            res = await postPSD(form.name, form.filter);
+            res = await postPSD(form.name, form.preData);
           } else {
-            res = await postDE(form.name, form.filter);
+            res = await postDE(form.name, form.preData);
           }
           loading.close();
           if (res.status === 200) ElMessage.success("success");
@@ -103,11 +108,12 @@ export default {
       formRef,
       form,
       onSubmit,
+      getPreDataLoading,
       placeholder,
       rules,
       onReset,
-      checkFilter,
       loading,
+      getPreDataList
     };
   },
 };
