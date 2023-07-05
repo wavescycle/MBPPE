@@ -6,14 +6,8 @@ import pywt
 
 
 # pass filter
-def butter_filter(data, btype, cutoff, order=6, fs=200):
-    """
-    order: Order of the filter
-    fs: Sampling rate
-    cutoff: Cut-off frequency
-    btype: {'low','high','band'}
-    """
-    # cutoff = list(filter(lambda it:it is not None, [low,high]))
+def butter_filter(data, btype, low, high, order=6, fs=200):
+    cutoff = list(filter(lambda it: it is not None, [low, high]))
     b, a = butter(order, cutoff, btype, fs=fs)
     return filtfilt(b, a, data)
 
@@ -25,12 +19,12 @@ def power_spectrum(data, fs=200):
 
 
 def de(data, fs=200, win=200):
-    '''
+    """
     data: [n*m] n:channel m time sequence
     fs: sample rate
     win: window size
     return ndarray [n*(m//win)*5]
-    '''
+    """
     delta = [1, 4]
     theta = [4, 8]
     alpha = [8, 14]
@@ -50,7 +44,7 @@ def de(data, fs=200, win=200):
         for i, v in enumerate([delta, theta, alpha, beta, gamma]):
             start = int(points_per_freq * v[0])
             end = int(points_per_freq * v[1])
-            e = np.sum(rfft_val[:, start:end]**2, axis=1) / (end - start + 1)
+            e = np.sum(rfft_val[:, start:end] ** 2, axis=1) / (end - start + 1)
             de = np.log(e) / 2 + constant
             deArray[idx, :, i] = de
     return deArray
@@ -79,7 +73,7 @@ def frequence(data,
                             mode='symmetric',
                             maxlevel=8)
     freqTree = [node.path for node in wp.get_level(maxlevel, 'freq')]
-    freqBand = fs / (2**maxlevel)
+    freqBand = fs / (2 ** maxlevel)
     iter_freqs = [
         {
             'name': 'Delta',

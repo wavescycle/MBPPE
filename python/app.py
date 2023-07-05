@@ -1,5 +1,6 @@
 from http.client import BAD_REQUEST
-from flask import Flask, request, send_file, jsonify, abort, make_response
+from werkzeug.exceptions import HTTPException, InternalServerError
+from flask import Flask, request, send_file, jsonify, abort, make_response, url_for, current_app
 from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
@@ -7,10 +8,17 @@ from scipy.io import loadmat
 from process import butter_filter, power_spectrum, de, time_frequence, frequence, ica
 from customSchema import DataSchema, FilterSchema, BasicSchema
 from utils import get_data
+from functools import wraps
+from datetime import datetime
+from utils import decode_async_task
+import time
 import numpy as np
+import uuid
+import threading
 import io
 import load
 import copy
+from enum import Enum
 
 app = Flask(__name__)
 api = Api(app)
@@ -141,6 +149,59 @@ class FileList(Resource):
         return jsonify(list(data))
 
 
+class FileTreeList(Resource):
+    def get(self):
+        file_trees = []
+        # TEST = {
+        #     'filename1': {
+        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
+        #         'Feature_Ext': {
+        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
+        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
+        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
+        #         },
+        #         'Info': {'sample_rate': 204}
+        #     },
+        #     'filename2': {
+        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
+        #         'Feature_Ext': {
+        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
+        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
+        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
+        #         },
+        #         'Info': {'sample_rate': 204}
+        #     },
+        #     'filename3': {
+        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
+        #         'Feature_Ext': {
+        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
+        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
+        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
+        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
+        #         },
+        #         'Info': {'sample_rate': 204}
+        #     }
+        # }
+        for k, v in DATA_STORAGE.items():
+            temp = {
+                'filename': k,
+                'sample_rate': v['Info']['sample_rate'],
+                'data_type':
+                    {'Pre_Process': list(v['Pre_Process'].keys())}
+            }
+            new_dict = {}
+            for outer_key, inner_dict in v['Feature_Ext'].items():
+                for inner_key, value in inner_dict.items():
+                    if value is not None:  # Ignore None values
+                        new_dict.setdefault(inner_key, []).append(outer_key)
+
+            temp['data_type']['Feature_Ext'] = new_dict
+            file_trees.append(temp)
+        return jsonify(file_trees)
+
+
 class FileStatus(Resource):
     def get(self):
         file_status = list()
@@ -156,10 +217,9 @@ class Data(Resource):
     @init_data(DataSchema)
     def get(self, **kwargs):
         data, is_none = get_data(**kwargs)
+        need_axis = kwargs['params']['need_axis']
 
-        print(data)
-
-        return send_file(stream_data(data, True), mimetype="application/octet-stream")
+        return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data()
     def post(self, **kwargs):
@@ -177,6 +237,10 @@ class Data(Resource):
             return 'CREATED', 201
         else:
             return 'Not support file', 400
+
+    def delete(self, filename):
+        del DATA_STORAGE[filename]
+        return 'Ok'
 
 
 class Filter(Resource):
@@ -197,17 +261,12 @@ class Filter(Resource):
         params = kwargs['params']
         storage_type = kwargs['modify_storage_type']
 
-        print(storage_type)
-
         method = params['method']
-        low = params['low']
-        high = params['high']
 
         raw = copy.deepcopy(source)
         # filter data
-        cutoff = list(filter(lambda it: it is not None, [low, high]))
-        storage[storage_type] = butter_filter(raw, btype=method, cutoff=cutoff, fs=info['sample_rate'])
-
+        storage[storage_type] = butter_filter(raw, btype=method, low=params['low'], high=params['high'],
+                                              fs=info['sample_rate'])
         return 'OK'
 
 
@@ -342,6 +401,92 @@ class TimeFrequence(Resource):
         return 'OK'
 
 
+TASKS = {}
+
+
+def async_api(wrapped_function):
+    @wraps(wrapped_function)
+    def new_function(*args, **kwargs):
+        def task_call(flask_app, environ):
+            # Create a request context similar to that of the original request
+            # so that the task can have access to flask.g, flask.request, etc.
+            with flask_app.request_context(environ):
+                # try:
+                wrapped_function(*args, **kwargs)
+
+                # tasks[task_id]['return_value'] = wrapped_function(*args, **kwargs)
+                # except HTTPException as e:
+                #     tasks[task_id]['return_value'] = current_app.handle_http_exception(e)
+                # except Exception as e:
+                #     # The function raised an exception, so we set a 500 error
+                #     tasks[task_id]['return_value'] = InternalServerError()
+                #     if current_app.debug:
+                #         # We want to find out if something happened so reraise
+                #         raise
+                # finally:
+                #     # We record the time of the response, to help in garbage
+                #     # collecting old tasks
+                #     tasks[task_id]['completion_timestamp'] = datetime.timestamp(datetime.utcnow())
+                #
+                #     # close the database session (if any)
+
+        # Assign an id to the asynchronous task
+        # task_id = uuid.uuid4().hex
+        # task_id = '408a43a133ba420c9d4b3e9b6bf090e9'
+        # Record the task, and then launch it
+        t = threading.Thread(target=task_call, args=(current_app._get_current_object(),
+                                                     request.environ))
+        t.start()
+
+        # Return a 202 response, with a link that the client can use to
+        # obtain task status
+        return 'accepted', 202
+
+    return new_function
+
+
+class Task(Resource):
+    def get(self, task_id=None, filename=None):
+        """
+        Return status about an asynchronous task. If this request returns a 202
+        status code, it means that task hasn't finished yet. Else, the response
+        from the task is returned.
+        """
+        """
+        task  get all task status
+        task/task_id get special task status
+        task/task_id/filename get task data
+        """
+        if task_id is None:
+            return jsonify(
+                [{'task_id': t_id, **{key: value for key, value in t_value.items() if key != 'data'}} for t_id, t_value
+                 in TASKS.items()])
+
+        task = TASKS.get(task_id)
+        if task is None:
+            abort(BAD_REQUEST)
+
+        if filename is None:
+            return jsonify({key: value for key, value in task.items() if key != 'data'})
+
+        return send_file(stream_data(task['data'][filename], False), mimetype="application/octet-stream")
+
+    @async_api
+    def post(self):
+        # perform some intensive processing
+        task_id = uuid.uuid4().hex
+        # task_id = '187acda6aa0447739a37ae74f63dfc4a'
+        body = request.json
+        TASKS[task_id] = {}
+
+        decode_async_task(TASKS[task_id], body, DATA_STORAGE)
+        return True
+
+    def delete(self, task_id):
+        del TASKS[task_id]
+        return 'Ok'
+
+
 @app.after_request
 def after_request_func(response):
     # url = request.url
@@ -367,6 +512,8 @@ api.add_resource(PSD, '/psd/<string:filename>')
 api.add_resource(DE, '/de/<string:filename>')
 api.add_resource(Frequence, '/frequence/<string:filename>')
 api.add_resource(TimeFrequence, '/timefrequence/<string:filename>')
+api.add_resource(Task, '/task', '/task/<string:task_id>', '/task/<string:task_id>/<string:filename>')
+api.add_resource(FileTreeList, '/filetreelist')
 
 if __name__ == '__main__':
     app.debug = True

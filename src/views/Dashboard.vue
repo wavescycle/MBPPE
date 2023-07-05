@@ -1,114 +1,137 @@
 <template>
   <div>
     <el-table :data="tableData" style="width: 100%" :border="true">
-      <el-table-column prop="Filename" label="Filename" />
-      <el-table-column prop="SampleRate" label="Sample Rate" />
-      <el-table-column prop="Filter" label="Filter" />
-      <el-table-column label="Save">
+      <el-table-column prop="filename" label="Filename"/>
+      <el-table-column prop="sample_rate" label="Sample Rate"/>
+      <el-table-column prop="data_type" label="Data Type">
         <template #default="scope">
-          <el-button @click="dialogVisible = true">SAVE</el-button>
-          <el-dialog v-model="dialogVisible" title="SAVE" width="30%">
-            <span>Filtered data </span><el-switch v-model="isfilter" />
-            <el-select
-              v-model="saveType"
-              class="m-2"
-              style="padding-left: 15px"
-            >
-              <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-select>
-            <template #footer>
-              <span class="dialog-footer">
-                <el-button @click="dialogVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="save(scope.row)"
-                  >Confirm</el-button
-                >
-              </span>
+          <el-tree-select v-model="dataType[scope.$index]" :data="scope.row.data_type" :render-after-expand="false"
+                          @change="selectChange"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="Action">
+        <template #default="scope">
+          <el-button @click="exportAction(scope.$index)" type="primary">Export</el-button>
+          <el-popconfirm title="All data type under this file will be deleted!"
+                         @confirm="deleteAction(scope.row.filename)">
+            <template #reference>
+              <el-button type="danger">Delete</el-button>
             </template>
-          </el-dialog>
+          </el-popconfirm>
+          <el-progress :percentage="percent[scope.$index]" :width="24" :stroke-width="3"
+                       v-show="percent[scope.$index]>0"/>
         </template>
       </el-table-column>
     </el-table>
-    <el-progress :percentage="percent" :width=200 v-show="progressState" />
   </div>
 </template>
 
 <script>
-// import Schart from "vue-schart";
-import { getFileStatus, download } from "../utils/api";
-import { CH_NAMES } from "../config/config.json";
-import { ref } from "vue";
+import {getFileStatus, download, getFileTreeList, deleteData} from "../utils/api";
+import {CH_NAMES} from "../config/config.json";
+import {ElNotification} from "element-plus"
+import {ref, onMounted,} from "vue";
+
+// TODO: All data get support need_axis
 export default {
   name: "dashboard",
   setup() {
     const progressState = ref(false);
-    const percent = ref(0);
+    const percent = ref([]);
     const tableData = ref(null);
     const dialogVisible = ref(false);
-    const isfilter = ref(false);
     const saveType = ref("data");
-    getFileStatus().then((res) => {
-      tableData.value = res.data;
-    });
-    const save = async (row) => {
-      const channels = CH_NAMES.map((e, i) => i);
-      console.log(channels);
-      dialogVisible.value = false;
-      progressState.value = true;
-      let type = saveType.value;
-      if (type === "data" && isfilter.value) {
-        type = "filter";
+    const dataType = ref([])
+
+    function transform(obj) {
+      let result = [];
+      for (let key in obj) {
+        if (Array.isArray(obj[key])) {
+          result.push({
+            value: key,
+            label: key,
+            children: obj[key].map(item => ({value: `${key}.${item}`, label: `${key} > ${item}`}))
+          });
+        } else if (typeof obj[key] === 'object') {
+          result.push({
+            value: key,
+            label: key,
+            children: transform(obj[key])
+          });
+        }
       }
-      console.log(type);
-      download(
-        type,
-        row.Filename,
-        (progressEvent) => {
-          percent.value = Math.floor(
-            (progressEvent.loaded * 100) / progressEvent.total
+      return result;
+    }
+
+    const selectChange = () => {
+      console.log(dataType.value)
+    }
+    const deleteAction = (filename) => {
+      deleteData(filename).then(res => {
+        refreshData()
+      })
+    }
+    const exportAction = (index) => {
+      const rowValue = tableData.value[index]
+      const typeValue = dataType.value[index]
+      const types = typeValue?.split('.')
+      if (types?.length > 1) {
+        const channels = CH_NAMES.map((e, i) => i);
+        const method = types[0]
+        const preData = types[1]
+        const type = method === "Pre_Process" ? "data" : method.toLowerCase()
+
+        download(type, rowValue.filename, (progressEvent) => {
+          percent.value[index] = Math.floor(
+              (progressEvent.loaded * 100) / progressEvent.total
           );
-        },
-        isfilter.value,
-        channels
-      ).then((res) => {
-        var fileURL = window.URL.createObjectURL(res.data);
-        var fileLink = document.createElement("a");
+        }, preData, channels, false).then((res) => {
+          const fileURL = window.URL.createObjectURL(res.data);
+          const fileLink = document.createElement("a");
 
-        fileLink.href = fileURL;
-        fileLink.setAttribute("download", row.Filename + ".npy");
-        document.body.appendChild(fileLink);
-        fileLink.click();
-        progressState.value = false;
-      });
-    };
+          fileLink.href = fileURL;
+          fileLink.setAttribute("download", rowValue.filename + ".npy");
+          document.body.appendChild(fileLink);
+          fileLink.click();
+          progressState.value = false;
+        });
+      } else {
+        const msg = types?.length === 1 ? "You should select child Node" : "You show select data type"
+        ElNotification({
+          title: 'Warning',
+          message: msg,
+          type: 'warning',
+        })
+      }
+    }
+    const refreshData = () => {
+      getFileTreeList().then((res) => {
+        const data = res.data;
+        dataType.value = Array.from({length: data.length})
+        percent.value = new Array(data.length).fill(0);
 
-    const options = [
-      {
-        value: "data",
-        label: "Raw",
-      },
-      {
-        value: "psd",
-        label: "PSD",
-      },
-      {
-        value: "de",
-        label: "DE",
-      },
-    ];
+        tableData.value = data.map(item => {
+          let newItem = {...item};
+          newItem.data_type = transform(item.data_type);
+          return newItem;
+        });
+
+      })
+    }
+    onMounted(() => {
+      refreshData()
+    })
+
     return {
       progressState,
       tableData,
       dialogVisible,
-      isfilter,
       saveType,
-      save,
       percent,
-      options,
+      dataType,
+      selectChange,
+      deleteAction,
+      exportAction
     };
   },
 };

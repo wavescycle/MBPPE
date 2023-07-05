@@ -1,44 +1,49 @@
 <template>
   <el-menu
-    default-active="/dashboard"
-    active-text-color="#ffd04b"
-    class="el-menu-vertical-demo"
-    :collapse="false"
-    background-color="#545c64"
-    text-color="#fff"
-    :router="true"
+      default-active="/dashboard"
+      active-text-color="#ffd04b"
+      class="el-menu-vertical-demo"
+      :collapse="false"
+      background-color="#545c64"
+      text-color="#fff"
+      :router="true"
   >
     <template v-for="(item, index) in items" :key="index">
       <template v-if="item.subs">
         <el-sub-menu :index="item.index" :key="item.index">
           <template #title>
-            <el-icon><component :is="item.icon" /></el-icon>
+            <el-icon>
+              <component :is="item.icon"/>
+            </el-icon>
             <span>{{ item.title }}</span>
           </template>
           <template v-for="subItem in item.subs">
             <el-sub-menu
-              v-if="subItem.subs"
-              :index="subItem.index"
-              :key="subItem.index"
+                v-if="subItem.subs"
+                :index="subItem.index"
+                :key="subItem.index"
             >
               <template #title>{{ subItem.title }}</template>
               <el-menu-item
-                v-for="(threeItem, i) in subItem.subs"
-                :key="i"
-                :index="threeItem.index"
+                  v-for="(threeItem, i) in subItem.subs"
+                  :key="i"
+                  :index="threeItem.index"
               >
-                {{ threeItem.title }}</el-menu-item
+                {{ threeItem.title }}
+              </el-menu-item
               >
             </el-sub-menu>
             <el-menu-item v-else :index="subItem.index" :key="subItem.index"
-              >{{ subItem.title }}
+            >{{ subItem.title }}
             </el-menu-item>
           </template>
         </el-sub-menu>
       </template>
       <template v-else>
         <el-menu-item :index="item.index" :key="item.index">
-          <el-icon><component :is="item.icon" /></el-icon>
+          <el-icon>
+            <component :is="item.icon"/>
+          </el-icon>
           <template #title>{{ item.title }}</template>
         </el-menu-item>
       </template>
@@ -46,9 +51,10 @@
   </el-menu>
 </template>
 <script>
-import { computed } from "vue";
-import { useStore } from "vuex";
-import { useRoute } from "vue-router";
+import {computed} from "vue";
+import {useStore} from "vuex";
+import {useRoute} from "vue-router";
+
 export default {
   setup() {
     const items = [
@@ -81,6 +87,11 @@ export default {
         icon: "pie-chart",
         index: "/charts",
         title: "Visualisation",
+      },
+      {
+        icon: "help",
+        index: "/pipeline",
+        title: "Pipeline",
       },
     ];
 

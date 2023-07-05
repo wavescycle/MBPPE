@@ -61,6 +61,10 @@ async function postData(filename, file, uploadProgress) {
     });
 }
 
+async function deleteData(filename) {
+    return await req.delete(`/data/${filename}`)
+}
+
 async function getFileList(pre_data = "") {
     return await req.get("/filelist", {
         params: {
@@ -172,11 +176,12 @@ async function postTimeFrequence(filename, channels, pre_data = "") {
     });
 }
 
-async function download(type, filename, onDownloadProgress, pre_data = "", channels = []) {
+async function download(type, filename, onDownloadProgress, pre_data = "", channels = [], need_axis = false) {
     return await req.get(`/${type}/${filename}`, {
         params: delEmptyItems({
             channels: channels,
             pre_data: pre_data,
+            need_axis: need_axis
         }),
         paramsSerializer: (params) => {
             return Qs.stringify(params, {arrayFormat: "repeat"});
@@ -194,10 +199,40 @@ async function getPreData(filename, feature_ext = '') {
     })
 }
 
+async function getTaskStatus(task_id) {
+    return await req.get(`/task${task_id ? '/' + task_id : ''}`)
+}
+
+async function getAllTaskStatus() {
+    return await getTaskStatus()
+}
+
+async function getTaskData(task_id, filename, onDownloadProgress) {
+    return await req.get(`/task/${task_id}/${filename}`, {
+        onDownloadProgress: onDownloadProgress,
+        responseType: "blob",
+    });
+}
+
+async function postTask(task) {
+    return await req.post('/task', task)
+}
+
+export async function deleteTask(taskId) {
+    return await req.delete(`/task/${taskId}`)
+}
+
+
+async function getFileTreeList() {
+    return await req.get('/filetreelist')
+}
+
+
 export {
     checkStatus,
     getData,
     postData,
+    deleteData,
     getFileList,
     getFileStatus,
     getFilter,
@@ -213,5 +248,10 @@ export {
     getTimeFrequence,
     postTimeFrequence,
     download,
-    getPreData
+    getPreData,
+    getTaskStatus,
+    getAllTaskStatus,
+    getTaskData,
+    postTask,
+    getFileTreeList
 };

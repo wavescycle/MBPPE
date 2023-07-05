@@ -4,15 +4,12 @@ from marshmallow.validate import OneOf
 
 class DataSchema(Schema):
     channels = fields.List(fields.Int, required=True, data_key="channels")
-    # isFilter = fields.Boolean(data_key="isFilter", missing=False)
-    # isPSD = fields.Boolean(data_key="isPSD", missing=False)
-    # isHeatMap = fields.Boolean(data_key="isHeatMap", missing=False)
-    # isDe = fields.Boolean(data_key="isDe", missing=False)
     isProcess = fields.Boolean(data_key="isProcess", missing=False)
     start = fields.Int(data_key="start", missing=0)
     end = fields.Int(data_key="end", missing=10)
     pre_data = fields.String(data_key="pre_data", missing='Raw')
     method = fields.String(data_key="method", missing="")
+    need_axis = fields.Boolean(data_key="need_axis", missing=True)
 
     @pre_load
     def preload(self, value, **kwargs):
@@ -46,3 +43,19 @@ class BasicSchema(Schema):
     start = fields.Int(data_key="start", missing=0)
     end = fields.Int(data_key="end", missing=10)
     pre_data = fields.String(data_key="pre_data", missing='Raw')
+
+    @pre_load
+    def preload(self, value, **kwargs):
+        try:
+            channels = value.getlist("channels", type=int)
+            value = value.to_dict()
+            value['channels'] = channels
+        except AttributeError as e:
+            pass
+        return value
+
+
+class AsyncFilterSchema(Schema):
+    method = fields.Str(data_key="method", validate=OneOf((['low', 'high', 'band'])))
+    low = fields.Float(data_key="low", missing=None)
+    high = fields.Float(data_key="high", missing=None)
