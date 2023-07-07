@@ -41,8 +41,8 @@
         <!-- <el-radio-group v-model="form.type" size="small">
           <el-radio-button label="lineChart">Raw</el-radio-button>
           <el-radio-button label="psdChart">PSD</el-radio-button>
-          <el-radio-button label="freqChart">Frequence</el-radio-button>
-          <el-radio-button label="timeFreqChart">TimeFrequence</el-radio-button>
+          <el-radio-button label="freqChart">Frequency</el-radio-button>
+          <el-radio-button label="timeFreqChart">TimeFrequency</el-radio-button>
         </el-radio-group> -->
       </el-form-item>
       <el-form-item
@@ -130,11 +130,11 @@ export default {
       },
       {
         value: "freqChart",
-        label: "Frequence",
+        label: "Frequency",
       },
       {
         value: "timeFreqChart",
-        label: "TimeFrequence",
+        label: "TimeFrequency",
       },
     ];
     const featureExtMap = {

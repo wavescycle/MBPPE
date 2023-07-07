@@ -1,7 +1,7 @@
 from process import butter_filter
 from enum import Enum
 from copy import deepcopy
-from process import butter_filter, power_spectrum, de, time_frequence, frequence, ica
+from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica
 import traceback
 from customSchema import AsyncFilterSchema
 
@@ -144,16 +144,13 @@ def async_freq(data, info, **kwargs):
     start = info['start']
     end = info['end']
     freq = kwargs['sample_rate']
-    return frequence(data, channels, start, end, fs=freq)
+    return frequency(data, channels, start, end, fs=freq)
 
 
 def async_time_freq(data, info, **kwargs):
     freq = kwargs['sample_rate']
-    channels = info['channels']
-    start = info['start']
-    end = info['end']
-    data, _ = time_frequence(data, channels, start, end, fs=freq)
-    return data
+    channels = slice(None)
+    return time_frequency(data, channels, fs=freq)
 
 
 if __name__ == '__main__':

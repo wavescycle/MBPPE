@@ -11,7 +11,11 @@ const req = new request(URL, PORT);
  * @config https://axios-http.com/docs/req_config
  */
 function delEmptyItems(data) {
-    Object.keys(data).forEach((k) => !data[k] && data[k] !== undefined && delete data[k]);
+    Object.keys(data).forEach(
+        (key) =>
+            (data[key] === null || data[key] === "" || data[key] === undefined) &&
+            delete data[key]
+    );
     return data;
 }
 
@@ -142,16 +146,16 @@ async function postDE(filename, pre_data = "") {
     });
 }
 
-async function getFrequence(filename, channels = 0, pre_data = "", start = 0, end = 10) {
-    let res = await req.get(`/frequence/${filename}`, {
-        params: {pre_data: pre_data, channels: channels, start: start, end: end},
+async function getFrequency(filename, channels = 0, pre_data = "", start = null, end = null) {
+    let res = await req.get(`/frequency/${filename}`, {
+        params: delEmptyItems({pre_data: pre_data, channels: channels, start: start, end: end}),
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
 }
 
-async function postFrequence(filename, channels, pre_data = "") {
-    return await req.post(`/freqfrequence/${filename}`, {
+async function postFrequency(filename, channels, pre_data = "") {
+    return await req.post(`/frequency/${filename}`, {
         pre_data: pre_data,
         channels: channels,
         start,
@@ -159,20 +163,18 @@ async function postFrequence(filename, channels, pre_data = "") {
     });
 }
 
-async function getTimeFrequence(filename, channels = 0, pre_data = "", start = 0, end = 10) {
-    let res = await req.get(`/timefrequence/${filename}`, {
+async function getTimeFrequency(filename, channels = 0, pre_data = "", start = 0, end = 10) {
+    let res = await req.get(`/timefrequency/${filename}`, {
         params: {pre_data: pre_data, channels: channels, start: start, end: end},
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
 }
 
-async function postTimeFrequence(filename, channels, pre_data = "") {
-    return await req.post(`/timefrequence/${filename}`, {
+async function postTimeFrequency(filename, channels, pre_data = "") {
+    return await req.post(`/timefrequency/${filename}`, {
         pre_data: pre_data,
         channels: channels,
-        start,
-        end,
     });
 }
 
@@ -243,10 +245,10 @@ export {
     postPSD,
     getDE,
     postDE,
-    getFrequence,
-    postFrequence,
-    getTimeFrequence,
-    postTimeFrequence,
+    getFrequency,
+    postFrequency,
+    getTimeFrequency,
+    postTimeFrequency,
     download,
     getPreData,
     getTaskStatus,

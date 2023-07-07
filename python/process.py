@@ -60,7 +60,7 @@ def de(data, fs=200, win=200):
 #     temp = np.mean(temp, axis=1)
 
 
-def frequence(data,
+def frequency(data,
               channel,
               start=0,
               end=10,
@@ -117,29 +117,36 @@ def frequence(data,
     return np.array(data_list)
 
 
-def time_frequence(data,
-                   channel,
-                   start=0,
-                   end=10,
-                   fs=200,
-                   scale=20,
-                   wavename='cgau8'):
+def time_frequency(data, channel, fs=200, scale=20, wavename='cgau8'):
+    # pywt.cwt
     fc = pywt.central_frequency(wavename)
     cparam = 2 * fc * scale
     scales = cparam / np.arange(scale, 0, -1)
-    # scales = cparam / np.arange(scale, 1)
-    cwtmatr, frequencies = pywt.cwt(data[channel][start * fs:end * fs], scales,
-                                    wavename, 1 / fs)
+    cwtmatr, frequencies = pywt.cwt(data[channel], scales, wavename, 1 / fs)
 
     # reverse the cwt matrix
     frequencies = np.array(frequencies)[::-1]
-    cwtmatr = abs(cwtmatr)[::-1].T
-    maxValue = np.max(cwtmatr)
-    # [time,frequence,data]
-    return np.array([[x / 200 + start, frequencies[y], v]
-                     for x, val in enumerate(cwtmatr)
-                     for y, v in enumerate(val)],
-                    dtype=np.float32), int(maxValue)
+    cwtmatr_abs = np.abs(cwtmatr)[::-1].transpose(1, 2, 0)  # Shape: (channel, sample, freq)
+
+    # reshape
+    num_samples = cwtmatr_abs.shape[1]
+    sample_indices = np.arange(num_samples) / fs
+    sample_grid, freq_grid = np.meshgrid(sample_indices, frequencies, indexing='ij')  # Shape: (sample, freq)
+    expanded_sample_grid = np.expand_dims(sample_grid, axis=0)
+    expanded_freq_grid = np.expand_dims(freq_grid, axis=0)
+    repeated_sample_grid = np.repeat(expanded_sample_grid, repeats=cwtmatr_abs.shape[0],
+                                     axis=0)
+    repeated_freq_grid = np.repeat(expanded_freq_grid, repeats=cwtmatr_abs.shape[0],
+                                   axis=0)
+
+    # stack along the last dimension
+    temp = np.stack((repeated_sample_grid, repeated_freq_grid, cwtmatr_abs), axis=-1).astype(
+        np.float32)  # Shape: (channel, sample, freq, 3)
+
+    # flatten the middle two dimensions
+    final_shape = (temp.shape[0], np.prod(temp.shape[1:-1]), temp.shape[-1])
+    #  (channel, sample*freq, 3)
+    return temp.reshape(final_shape)
 
 
 # ICA

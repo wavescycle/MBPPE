@@ -154,6 +154,7 @@
                     <el-radio-group v-model="taskStepInfo.method">
                       <el-radio-button label="PSD"/>
                       <el-radio-button label="DE"/>
+                      <el-radio-button label="Time_Freq">TimeFrequency</el-radio-button>
                     </el-radio-group>
                   </el-form-item>
                 </el-tab-pane>

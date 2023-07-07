@@ -37,11 +37,9 @@ class FilterSchema(Schema):
 
 
 class BasicSchema(Schema):
-    isFilter = fields.Boolean(data_key="isFilter", missing=False)
-    isICA = fields.Boolean(data_key="isICA", missing=False)
     channels = fields.List(fields.Int, data_key="channels", missing=[])
-    start = fields.Int(data_key="start", missing=0)
-    end = fields.Int(data_key="end", missing=10)
+    start = fields.Int(data_key="start", missing=None)
+    end = fields.Int(data_key="end", missing=None)
     pre_data = fields.String(data_key="pre_data", missing='Raw')
 
     @pre_load

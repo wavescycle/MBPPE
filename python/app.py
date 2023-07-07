@@ -5,7 +5,7 @@ from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
 from scipy.io import loadmat
-from process import butter_filter, power_spectrum, de, time_frequence, frequence, ica
+from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica
 from customSchema import DataSchema, FilterSchema, BasicSchema
 from utils import get_data
 from functools import wraps
@@ -338,14 +338,14 @@ class DE(Resource):
         return 'OK'
 
 
-class Frequence(Resource):
+class Frequency(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="Freq", **kwargs)
 
         if is_none:
-            abort(BAD_REQUEST, 'You need do Frequence first')
+            abort(BAD_REQUEST, 'You need do Frequency first')
         else:
             return send_file(stream_data(data, True), mimetype="application/octet-stream")
 
@@ -363,24 +363,39 @@ class Frequence(Resource):
 
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['Freq'] = frequence(raw, channels, start, end, fs=freq)
+        storage[storage_type]['Freq'] = frequency(raw, channels, start, end, fs=freq)
         return 'OK'
 
 
-class TimeFrequence(Resource):
+class TimeFrequency(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="Time_Freq", **kwargs)
         info = kwargs['info']
+        params = kwargs['params']
+        start = params['start']
+        end = params['end']
+        fs = info['sample_rate']
 
         if is_none:
             abort(BAD_REQUEST, 'You need do Time_Freq first')
 
-        response = make_response(
-            send_file(stream_data(data, False), mimetype="application/octet-stream"))
-        response.headers['MaxValue'] = info['maxValue']
-        response.headers['Access-Control-Expose-Headers'] = 'MaxValue'
+        # Visualisation
+        if start is not None or end is not None:
+            cwt_scales = 20
+            scale = fs * cwt_scales
+            data_fragment = data[0][start * scale:end * scale]
+            max_value = np.max(data_fragment[:, 2])
+        else:
+            data_fragment = data
+            max_value = None
+
+        response = make_response(send_file(stream_data(data_fragment, False), mimetype="application/octet-stream"))
+
+        if max_value is not None:
+            response.headers['MaxValue'] = max_value
+            response.headers['Access-Control-Expose-Headers'] = 'MaxValue'
         return response
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
@@ -392,12 +407,9 @@ class TimeFrequence(Resource):
         storage_type = kwargs['modify_storage_type']
 
         channels = params['channels']
-        start = params['start']
-        end = params['end']
-
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['Time_Freq'], info['maxValue'] = time_frequence(raw, channels, start, end, fs=freq)
+        storage[storage_type]['Time_Freq'] = time_frequency(raw, channels, fs=freq)
         return 'OK'
 
 
@@ -491,7 +503,7 @@ class Task(Resource):
 def after_request_func(response):
     # url = request.url
     # method = request.method
-    # white_list = ['data', 'filter', 'ica', 'psd', 'de', 'frequence', 'timefrequence']
+    # white_list = ['data', 'filter', 'ica', 'psd', 'de', 'frequency', 'timefrequency']
     #
     # if method == 'GET' or method == 'POST':
     #     for word in white_list:
@@ -510,8 +522,8 @@ api.add_resource(Filter, '/filter/<string:filename>')
 api.add_resource(ICA, '/ica/<string:filename>')
 api.add_resource(PSD, '/psd/<string:filename>')
 api.add_resource(DE, '/de/<string:filename>')
-api.add_resource(Frequence, '/frequence/<string:filename>')
-api.add_resource(TimeFrequence, '/timefrequence/<string:filename>')
+api.add_resource(Frequency, '/frequency/<string:filename>')
+api.add_resource(TimeFrequency, '/timefrequency/<string:filename>')
 api.add_resource(Task, '/task', '/task/<string:task_id>', '/task/<string:task_id>/<string:filename>')
 api.add_resource(FileTreeList, '/filetreelist')
 

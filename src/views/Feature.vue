@@ -16,7 +16,25 @@
         <el-radio-group v-model="form.method">
           <el-radio-button label="PSD"/>
           <el-radio-button label="DE"/>
+          <el-radio-button label="Frequency"/>
+          <el-radio-button label="TimeFrequency"/>
         </el-radio-group>
+      </el-form-item>
+      <el-form-item label="Channels" prop="channels" v-if="form.method.includes('Frequency')">
+        <el-select
+            v-model="form.channels"
+            multiple
+            collapse-tags
+            placeholder="Default full selection"
+            :span="8"
+        >
+          <el-option
+              v-for="(file, i) of CH_NAMES"
+              :key="i"
+              :label="file"
+              :value="i"
+          ></el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="PreData" prop="preData">
         <el-select
@@ -42,9 +60,10 @@
 </template>
 
 <script>
-import {reactive, ref, computed} from "vue";
-import {getFileList, postPSD, postDE, getPreData} from "../utils/api";
+import {reactive, ref, computed, onMounted} from "vue";
+import {getFileList, postPSD, postDE, getPreData, postFrequency, postTimeFrequency} from "../utils/api";
 import {ElMessage, ElLoading} from "element-plus";
+import {CH_NAMES} from "../config/config.json"
 
 export default {
   setup() {
@@ -57,6 +76,7 @@ export default {
       method: "PSD",
       fileList: [],
       preData: "",
+      channels: [],
       preDataList: []
     });
 
@@ -64,9 +84,7 @@ export default {
       name: {required: true, message: "Select a file", trigger: "blur"},
       preData: {required: true, message: "Select the pre data", trigger: "blur"},
     }
-    getFileList().then((res) => {
-      form.fileList = res.data;
-    });
+
     let placeholder = computed(() =>
         form.fileList?.length ? "Select" : "Upload data first"
     );
@@ -88,14 +106,25 @@ export default {
             text: "Loading",
           });
           let res = null;
-          if (form.method === "PSD") {
-            res = await postPSD(form.name, form.preData);
-          } else {
-            res = await postDE(form.name, form.preData);
+
+          switch (form.method) {
+            case "PSD":
+              res = await postPSD(form.name, form.preData);
+              break;
+            case "DE":
+              res = await postDE(form.name, form.preData);
+              break;
+            case "Frequency":
+              res = await postFrequency(form.name, form.channels, form.preData)
+              break;
+            case "TimeFrequency":
+              res = await postTimeFrequency(form.name, form.channels, form.preData)
+              break
           }
+
           loading.close();
-          if (res.status === 200) ElMessage.success("success");
-          else ElMessage.error(res.data);
+          if (res?.status === 200) ElMessage.success("success");
+          else ElMessage.error(res?.data);
         } else {
           return false;
         }
@@ -104,6 +133,12 @@ export default {
     const onReset = () => {
       formRef.value.resetFields();
     };
+
+    onMounted(() => {
+      getFileList().then((res) => {
+        form.fileList = res.data;
+      });
+    })
     return {
       formRef,
       form,
@@ -113,6 +148,7 @@ export default {
       rules,
       onReset,
       loading,
+      CH_NAMES,
       getPreDataList
     };
   },

@@ -1,5 +1,5 @@
 import {CH_NAMES} from "../config/config.json";
-import {getData, getFilter, getPSD, getFrequence, getTimeFrequence} from "./api";
+import {getData, getFilter, getPSD, getFrequency, getTimeFrequency} from "./api";
 
 class myChart {
     // Constants
@@ -411,7 +411,7 @@ class myChart {
         this.preData = preData;
         this.start = start;
         this.end = end;
-        let data = await getFrequence(filename, channels, preData, start, end);
+        let data = await getFrequency(filename, channels, preData, start, end);
         const freqList = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
         if (data.status === 200) {
             const op = {
@@ -503,7 +503,7 @@ class myChart {
         this.preData = preData;
         this.start = start;
         this.end = end;
-        let data = await getTimeFrequence(filename, channels, preData, start, end);
+        let data = await getTimeFrequency(filename, channels, preData, start, end);
         if (data.status === 200) {
             const maxvalue = data.headers.maxvalue;
             console.log(maxvalue);
