@@ -15,7 +15,7 @@ const routes = [
                 path: "/dashboard",
                 name: "dashboard",
                 meta: {
-                    title: "dashboard",
+                    title: "Dashboard",
                 },
                 component: () =>
                     import(/* webpackChunkName: "dashboard" */ "../views/Dashboard.vue"),
@@ -30,19 +30,19 @@ const routes = [
                     import(/* webpackChunkName: "charts" */ "../views/BaseCharts.vue"),
             },
             {
-                path: "/filter",
-                name: "filter",
+                path: "/preprocess",
+                name: "preprocess",
                 meta: {
-                    title: "filter",
+                    title: "PreProcess",
                 },
                 component: () =>
-                    import(/* webpackChunkName: "form" */ "../views/Filter.vue"),
+                    import(/* webpackChunkName: "form" */ "../views/PreProcess.vue"),
             },
             {
                 path: "/feature",
                 name: "feature",
                 meta: {
-                    title: "feature",
+                    title: "Feature",
                 },
                 component: () =>
                     import(/* webpackChunkName: "form" */ "../views/Feature.vue"),
@@ -51,7 +51,7 @@ const routes = [
                 path: "/upload",
                 name: "upload",
                 meta: {
-                    title: "File Upload",
+                    title: "FileUpload",
                 },
                 component: () =>
                     import(/* webpackChunkName: "upload" */ "../views/Upload.vue"),
@@ -60,7 +60,7 @@ const routes = [
                 path: "/pipeline",
                 name: "pipeline",
                 meta: {
-                    title: "pipeline",
+                    title: "Pipeline",
                 },
                 component: () =>
                     import(/* webpackChunkName: "dashboard" */ "../views/Pipeline.vue"),

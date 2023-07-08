@@ -74,7 +74,7 @@ export default {
         index: "2",
         subs: [
           {
-            index: "/filter",
+            index: "/preprocess",
             title: "Pre-processing",
           },
           {
