@@ -32,12 +32,16 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
         'ICA': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None},
         'Filter_ICA': {'PSD': None, 'DE': None, 'Freq': None, 'Time_Freq': None}
     },
+    Channels: {
+    
+    }
     'Info': {'sample_rate': 200}
 }
 '''
 DATA_STORAGE_TEMPLATE = {
     'Pre_Process': {},
     'Feature_Ext': {},
+    'Channels': {},
     'Info': {'sample_rate': 200}
 }
 DATA_STORAGE = dict()
@@ -68,7 +72,7 @@ def stream_data(data, axis=True):
 
 def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', source_path='Pre_Process'):
     def decorator(fuc):
-        def wrapper(*args, filename):
+        def wrapper(*args, **kwargs):
             if request.method == 'GET':
                 params = request.args
             else:
@@ -79,7 +83,7 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
                     params = schema(unknown=EXCLUDE).load(params)
             except ValidationError as e:
                 abort(BAD_REQUEST, str(e.messages))
-
+            filename = kwargs['filename']
             DATA_STORAGE.setdefault(filename, copy.deepcopy(DATA_STORAGE_TEMPLATE))
 
             if params:
@@ -109,6 +113,41 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
             return fuc(*args, filename=filename, info=info, storage=storage, modify_storage_type=modify_storage_type,
                        source=source[modify_source_type],
                        params=params)
+
+        return wrapper
+
+    return decorator
+
+
+def init_channels(method):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            params = kwargs['params']
+            filename = kwargs['filename']
+            channels = params.get("channels")
+            channel_path = DATA_STORAGE[filename]['Channels']
+
+            if request.method == 'POST' and channels is not None:
+                storage_type = kwargs.get('modify_storage_type', 'Raw')
+                channel_path.setdefault(storage_type, {})
+                channel_path[storage_type][method] = channels
+
+            elif request.method == 'GET' and channels is not None:
+                pre_data = params.get('pre_data', 'Raw')
+                target = method or pre_data
+
+                try:
+                    storage_channels = channel_path[pre_data][target]
+                except KeyError:
+                    storage_channels = channels
+
+                try:
+                    new_channels = [storage_channels.index(ch) for ch in channels]
+                    params['channels'] = new_channels
+                except ValueError as e:
+                    abort(BAD_REQUEST, 'Includes unprocessed channels')
+
+            return func(*args, **kwargs)
 
         return wrapper
 
@@ -215,6 +254,7 @@ class FileStatus(Resource):
 class Data(Resource):
 
     @init_data(DataSchema)
+    @init_channels(None)
     def get(self, **kwargs):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
@@ -245,6 +285,7 @@ class Data(Resource):
 
 class Filter(Resource):
     @init_data(FilterSchema, storage_type='Filter')
+    @init_channels('Filter')
     def get(self, **kwargs):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
@@ -255,6 +296,7 @@ class Filter(Resource):
             return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(FilterSchema, storage_type='Filter')
+    @init_channels('Filter')
     def post(self, **kwargs):
         source = kwargs['source']
         storage = kwargs['storage']
@@ -345,6 +387,7 @@ class DE(Resource):
 class Frequency(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
+    @init_channels('Freq')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="Freq", **kwargs)
         need_axis = kwargs['params']['need_axis']
@@ -358,6 +401,7 @@ class Frequency(Resource):
             return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
+    @init_channels('Freq')
     def post(self, **kwargs):
         source = kwargs['source']
         storage = kwargs['storage']
@@ -375,6 +419,7 @@ class Frequency(Resource):
 class TimeFrequency(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
+    @init_channels('Time_Freq')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="Time_Freq", **kwargs)
         info = kwargs['info']
@@ -405,6 +450,7 @@ class TimeFrequency(Resource):
         return response
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
+    @init_channels('Time_Freq')
     def post(self, **kwargs):
         source = kwargs['source']
         storage = kwargs['storage']
@@ -511,11 +557,8 @@ def after_request_func(response):
     # method = request.method
     # white_list = ['data', 'filter', 'ica', 'psd', 'de', 'frequency', 'timefrequency']
     #
-    # if method == 'GET' or method == 'POST':
-    #     for word in white_list:
-    #         if word in url:
-    #             print(DATA_STORAGE)
-
+    # if request.method == 'GET' or request.method == 'POST':
+    #     print(DATA_STORAGE['4_20140621.mat']['Channels'])
     return response
 
 

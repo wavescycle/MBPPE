@@ -72,6 +72,11 @@ def get_data(feature_ext=None, **kwargs):
 '''
 
 
+def map_channel(channel, storage):
+    # storage[]
+    pass
+
+
 def decode_async_task(task_storage, task_info, data_storage):
     filenames = task_info['filenames']
     channels = task_info['channels']

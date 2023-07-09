@@ -207,7 +207,6 @@ class myChart {
         this.preData = preData;
 
         let data = await getData(filename, channels, preData, {need_axis: true});
-        console.log(channels);
 
         if (data.status === 200) {
             const op = {
@@ -328,7 +327,14 @@ class myChart {
                 notMerge: true,
             });
         } else {
-            this.errorChart(data.data.message);
+            const errorData = data.data
+            let error
+            try {
+                error = JSON.parse(errorData).message;
+            } catch (e) {
+                error = errorData
+            }
+            this.errorChart(error);
         }
         this.chart.hideLoading();
     }
