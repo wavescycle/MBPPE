@@ -106,7 +106,9 @@ export default {
             text: "Loading",
           });
           let res = null;
-
+          if (form.channels.length === 0) {
+            form.channels = CH_NAMES.map((e, i) => i)
+          }
           switch (form.method) {
             case "PSD":
               res = await postPSD(form.name, form.preData);

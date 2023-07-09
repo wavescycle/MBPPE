@@ -50,31 +50,10 @@ def de(data, fs=200, win=200):
     return deArray
 
 
-# def heatMap(data, start=0, during=1, fs=200):
-#     axis = [[]]
-
-#     windows = during * fs
-#     start_time = start * 200
-#     end_time = start_time + windows
-#     temp = data[:, start_time:end_time]
-#     temp = np.mean(temp, axis=1)
-
-
-def frequency(data,
-              channel,
-              start=0,
-              end=10,
-              fs=200,
-              wavename='db4',
-              maxlevel=8):
-    data = data[channel]
-    wp = pywt.WaveletPacket(data=data,
-                            wavelet=wavename,
-                            mode='symmetric',
-                            maxlevel=8)
-    freqTree = [node.path for node in wp.get_level(maxlevel, 'freq')]
-    freqBand = fs / (2 ** maxlevel)
-    iter_freqs = [
+def frequency(data, channel, fs=200, wavename='db4', maxlevel=8):
+    all_data = []
+    freq_band = fs / (2 ** maxlevel)
+    iter_freq = [
         {
             'name': 'Delta',
             'fmin': 1,
@@ -101,20 +80,24 @@ def frequency(data,
             'fmax': 50
         },
     ]
-    data_list = []
-    for iter in range(len(iter_freqs)):
-        new_wp = pywt.WaveletPacket(data=None,
-                                    wavelet=wavename,
-                                    mode='symmetric',
-                                    maxlevel=maxlevel)
-        for i in range(len(freqTree)):
-            bandMin = i * freqBand
-            bandMax = bandMin + freqBand
-            if (iter_freqs[iter]['fmin'] <= bandMin
-                    and iter_freqs[iter]['fmax'] >= bandMax):
-                new_wp[freqTree[i]] = wp[freqTree[i]].data
-        data_list.append(new_wp.reconstruct(update=True))
-    return np.array(data_list)
+
+    if channel is None:
+        channel = range(data.shape[0])
+
+    for ch in channel:
+        wp = pywt.WaveletPacket(data=data[ch], wavelet=wavename, mode='symmetric', maxlevel=8)
+        freq_tree = [node.path for node in wp.get_level(maxlevel, 'freq')]
+        single_data = []
+        for it in range(len(iter_freq)):
+            new_wp = pywt.WaveletPacket(data=None, wavelet=wavename, mode='symmetric', maxlevel=maxlevel)
+            for i in range(len(freq_tree)):
+                band_min = i * freq_band
+                band_max = band_min + freq_band
+                if iter_freq[it]['fmin'] <= band_min and iter_freq[it]['fmax'] >= band_max:
+                    new_wp[freq_tree[i]] = wp[freq_tree[i]].data
+            single_data.append(new_wp.reconstruct(update=True))
+        all_data.append(single_data)
+    return np.array(all_data)
 
 
 def time_frequency(data, channel, fs=200, scale=20, wavename='cgau8'):

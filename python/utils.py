@@ -120,8 +120,8 @@ def decode_async_task(task_storage, task_info, data_storage):
 
 def async_filter(data, info, **kwargs):
     info = AsyncFilterSchema().load(info)
-    low = info.get("low")
-    high = info.get("high")
+    low = info.get('low')
+    high = info.get('high')
     method = info['method']
     return butter_filter(data, btype=method, low=low, high=high, fs=kwargs['sample_rate'])
 
@@ -140,54 +140,11 @@ def async_de(data, info, **kwargs):
 
 
 def async_freq(data, info, **kwargs):
-    channels = info['channels']
-    start = info['start']
-    end = info['end']
     freq = kwargs['sample_rate']
-    return frequency(data, channels, start, end, fs=freq)
+    return frequency(data, None, fs=freq)
 
 
 def async_time_freq(data, info, **kwargs):
     freq = kwargs['sample_rate']
     channels = slice(None)
     return time_frequency(data, channels, fs=freq)
-
-
-if __name__ == '__main__':
-    TASK_ID = '408a43a133ba420c9d4b3e9b6bf090e9'
-    TASKS = {}
-    TASKS.setdefault(TASK_ID, {})
-    TASK_INFO = {
-        "filenames": ["4_20140621.mat", "14_20140627.mat"],
-        "channels": [0, 1, 2, 3, 4, 5, 6, 7],
-        "tasks": [
-            {
-                "seq": 1,
-                "task": {
-                    "method": "filter",
-                    "info": {
-                        "low": 1,
-                        "high": 40,
-                        "method": "bandpass"
-                    }
-                }
-            },
-            {
-                "seq": 2,
-                "task": {
-                    "method": "ica",
-                    "info": {}
-                }
-            },
-            {
-                "seq": 3,
-                "task": {
-                    "method": "psd",
-                    "info": {}
-                }
-            }
-        ]
-    }
-
-    decode_async_task(TASKS[TASK_ID], TASK_INFO, {})
-    print(TASKS)

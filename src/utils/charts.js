@@ -1,5 +1,5 @@
 import {CH_NAMES} from "../config/config.json";
-import {getData, getFilter, getPSD, getFrequency, getTimeFrequency} from "./api";
+import {getData, getPSD, getFrequency, getTimeFrequency} from "./api";
 
 class myChart {
     // Constants
@@ -206,7 +206,7 @@ class myChart {
         this.channels = channels;
         this.preData = preData;
 
-        let data = await getData(filename, channels, preData);
+        let data = await getData(filename, channels, preData, {need_axis: true});
         console.log(channels);
 
         if (data.status === 200) {
@@ -337,7 +337,7 @@ class myChart {
     async psdChart(filename, preData) {
         this.chart.showLoading();
         const channels = CH_NAMES;
-        const data = await getPSD(filename, preData);
+        const data = await getPSD(filename, preData, {need_axis: true});
         if (data.status === 200) {
             const op = {
                 title: {
@@ -411,7 +411,7 @@ class myChart {
         this.preData = preData;
         this.start = start;
         this.end = end;
-        let data = await getFrequency(filename, channels, preData, start, end);
+        let data = await getFrequency(filename, channels, preData, {need_axis: true});
         const freqList = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
         if (data.status === 200) {
             const op = {
@@ -503,7 +503,7 @@ class myChart {
         this.preData = preData;
         this.start = start;
         this.end = end;
-        let data = await getTimeFrequency(filename, channels, preData, start, end);
+        let data = await getTimeFrequency(filename, channels, preData, {start, end});
         if (data.status === 200) {
             const maxvalue = data.headers.maxvalue;
             console.log(maxvalue);

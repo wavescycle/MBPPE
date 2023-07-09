@@ -45,11 +45,12 @@ async function getFileStatus() {
     return await req.get("/filestatus");
 }
 
-async function getData(filename, channels, pre_data = 'Raw') {
+async function getData(filename, channels, pre_data = 'Raw', config = {}) {
     let res = await req.get(`/data/${filename}`, {
         params: {
             channels: channels,
-            pre_data: pre_data
+            pre_data: pre_data,
+            ...config
         },
         responseType: "arraybuffer",
         paramsSerializer: (params) => {
@@ -77,11 +78,12 @@ async function getFileList(pre_data = "") {
     });
 }
 
-async function getFilter(filename, channels, preData) {
+async function getFilter(filename, channels, preData, config = {}) {
     let res = await req.get(`/filter/${filename}`, {
         params: delEmptyItems({
             channels: channels,
-            pre_data: preData
+            pre_data: preData,
+            ...config
         }),
         responseType: "arraybuffer",
         paramsSerializer: (params) => {
@@ -104,9 +106,9 @@ async function postFilter(filename, channels, method, low, high, preData) {
     );
 }
 
-async function getICA(filename, pre_data = "") {
+async function getICA(filename, pre_data = "", config = {}) {
     let res = await req.get(`/ica/${filename}`, {
-        params: {pre_data: pre_data},
+        params: {pre_data: pre_data, ...config},
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
@@ -118,9 +120,9 @@ async function postICA(filename, pre_data = "") {
     });
 }
 
-async function getPSD(filename, pre_data = "") {
+async function getPSD(filename, pre_data = "", config = {}) {
     let res = await req.get(`/psd/${filename}`, {
-        params: {pre_data: pre_data},
+        params: {pre_data: pre_data, ...config},
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
@@ -132,9 +134,9 @@ async function postPSD(filename, pre_data = "") {
     });
 }
 
-async function getDE(filename, pre_data = "") {
+async function getDE(filename, pre_data = "", config = {}) {
     let res = await req.get(`/de/${filename}`, {
-        params: {pre_data: pre_data},
+        params: {pre_data: pre_data, ...config},
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
@@ -146,9 +148,9 @@ async function postDE(filename, pre_data = "") {
     });
 }
 
-async function getFrequency(filename, channels = 0, pre_data = "", start = null, end = null) {
+async function getFrequency(filename, channels, pre_data = "", config = {}) {
     let res = await req.get(`/frequency/${filename}`, {
-        params: delEmptyItems({pre_data: pre_data, channels: channels, start: start, end: end}),
+        params: delEmptyItems({pre_data: pre_data, channels: channels, ...config}),
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
@@ -158,14 +160,12 @@ async function postFrequency(filename, channels, pre_data = "") {
     return await req.post(`/frequency/${filename}`, {
         pre_data: pre_data,
         channels: channels,
-        start,
-        end,
     });
 }
 
-async function getTimeFrequency(filename, channels = 0, pre_data = "", start = 0, end = 10) {
+async function getTimeFrequency(filename, channels, pre_data = "", config = {}) {
     let res = await req.get(`/timefrequency/${filename}`, {
-        params: {pre_data: pre_data, channels: channels, start: start, end: end},
+        params: {pre_data: pre_data, channels: channels, ...config},
         responseType: "arraybuffer",
     });
     return decodeArrayBuffer(res);
@@ -178,12 +178,12 @@ async function postTimeFrequency(filename, channels, pre_data = "") {
     });
 }
 
-async function download(type, filename, onDownloadProgress, pre_data = "", channels = [], need_axis = false) {
+async function download(type, filename, onDownloadProgress, pre_data = "", channels, config = {}) {
     return await req.get(`/${type}/${filename}`, {
         params: delEmptyItems({
             channels: channels,
             pre_data: pre_data,
-            need_axis: need_axis
+            ...config
         }),
         paramsSerializer: (params) => {
             return Qs.stringify(params, {arrayFormat: "repeat"});

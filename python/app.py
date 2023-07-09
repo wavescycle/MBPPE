@@ -247,11 +247,12 @@ class Filter(Resource):
     @init_data(FilterSchema, storage_type='Filter')
     def get(self, **kwargs):
         data, is_none = get_data(**kwargs)
+        need_axis = kwargs['params']['need_axis']
 
         if is_none:
             abort(BAD_REQUEST, 'You need do filter first')
         else:
-            return send_file(stream_data(data), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(FilterSchema, storage_type='Filter')
     def post(self, **kwargs):
@@ -275,11 +276,12 @@ class ICA(Resource):
     @init_data(BasicSchema, storage_type='ICA')
     def get(self, **kwargs):
         data, is_none = get_data(**kwargs)
+        need_axis = kwargs['params']['need_axis']
 
         if is_none:
             abort(BAD_REQUEST, 'You need do ICA first')
         else:
-            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_type='ICA')
     def post(self, **kwargs):
@@ -295,11 +297,12 @@ class PSD(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="PSD", **kwargs)
+        need_axis = kwargs['params']['need_axis']
 
         if is_none:
             abort(BAD_REQUEST, 'You need do PSD first')
         else:
-            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def post(self, **kwargs):
@@ -319,11 +322,12 @@ class DE(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="DE", **kwargs)
+        need_axis = kwargs['params']['need_axis']
 
         if is_none:
             abort(BAD_REQUEST, 'You need do DE first')
         else:
-            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
     def post(self, **kwargs):
@@ -343,11 +347,15 @@ class Frequency(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="Freq", **kwargs)
+        need_axis = kwargs['params']['need_axis']
+
+        if need_axis and len(data.shape) > 2:
+            data = data[0]
 
         if is_none:
             abort(BAD_REQUEST, 'You need do Frequency first')
         else:
-            return send_file(stream_data(data, True), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     def post(self, **kwargs):
@@ -358,12 +366,9 @@ class Frequency(Resource):
         storage_type = kwargs['modify_storage_type']
 
         channels = params['channels']
-        start = params['start']
-        end = params['end']
-
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['Freq'] = frequency(raw, channels, start, end, fs=freq)
+        storage[storage_type]['Freq'] = frequency(raw, channels, fs=freq)
         return 'OK'
 
 
@@ -374,6 +379,7 @@ class TimeFrequency(Resource):
         data, is_none = get_data(feature_ext="Time_Freq", **kwargs)
         info = kwargs['info']
         params = kwargs['params']
+        need_axis = params['need_axis']
         start = params['start']
         end = params['end']
         fs = info['sample_rate']
@@ -391,7 +397,7 @@ class TimeFrequency(Resource):
             data_fragment = data
             max_value = None
 
-        response = make_response(send_file(stream_data(data_fragment, False), mimetype="application/octet-stream"))
+        response = make_response(send_file(stream_data(data_fragment, need_axis), mimetype="application/octet-stream"))
 
         if max_value is not None:
             response.headers['MaxValue'] = max_value

@@ -38,12 +38,6 @@
               :value="item.value"
           />
         </el-select>
-        <!-- <el-radio-group v-model="form.type" size="small">
-          <el-radio-button label="lineChart">Raw</el-radio-button>
-          <el-radio-button label="psdChart">PSD</el-radio-button>
-          <el-radio-button label="freqChart">Frequency</el-radio-button>
-          <el-radio-button label="timeFreqChart">TimeFrequency</el-radio-button>
-        </el-radio-group> -->
       </el-form-item>
       <el-form-item
           label="Channels"
@@ -56,12 +50,12 @@
             :multiple="multiple"
             collapse-tags
             :placeholder="channelsPlaceholder"
-            :multiple-limit="5"
+            :multiple-limit="10"
         >
           <el-option
-              v-for="(file, i) of CH_NAMES"
+              v-for="(ch, i) of CH_NAMES"
               :key="i"
-              :label="file"
+              :label="ch"
               :value="i"
           ></el-option>
         </el-select>
@@ -92,7 +86,6 @@
 
 <script>
 import * as echarts from "echarts";
-import {ElMessage} from "element-plus";
 import charts from "../utils/charts";
 import {getFileList, getPreData} from "../utils/api";
 import {reactive, computed, ref, onMounted} from "vue";
@@ -147,24 +140,23 @@ export default {
     const height = 600;
     let chart;
 
-    getFileList().then((res) => {
-      form.fileList = res.data;
-    });
-
     let placeholder = computed(() =>
         form.fileList.length ? "Select" : "Upload data first"
     );
     let channelsPlaceholder = computed(() =>
         form.type === "lineChart" ? "10 channels are used by default" : "Select a channel"
     );
-    let multiple = computed(() => (form.type === "lineChart" ? true : false));
+    let multiple = computed(() => form.type === "lineChart");
     let chartChange = () => {
-      if (form.type === "lineChart") form.channels = [];
-      else form.channels = "";
+      form.channels = [];
       form.preDataList.length = 0;
       form.preData = ''
     };
+
     onMounted(() => {
+      getFileList().then((res) => {
+        form.fileList = res.data;
+      });
       const myChart = echarts.init(main.value, null, {
         width: width,
         height: height,
@@ -188,32 +180,21 @@ export default {
         }
       }
     }
-    const checkFilter = async () => {
-      loading.value = true;
-      if (form.isFilter) {
-        form.isFilter = false;
-      } else {
-        const res = await getFileList(true);
-        if (res.data.indexOf(form.name) !== -1) {
-          form.isFilter = true;
-        } else {
-          ElMessage.error(`Filter the ${form.name} first`);
-        }
-      }
-      loading.value = false;
-    };
-
     const onSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {
-          if (form.channels.length === 0 && form.type === "lineChart") {
-            // const len = CH_NAMES.length < 5 ? CH_NAMES.length : 5;
-            const len = 10
-            const alterChannels = new Array(len);
-            for (let i = 0; i < len; i++) {
-              alterChannels[i] = i;
+          if (form.channels.length === 0) {
+            if (form.type === "lineChart") {
+              const len = 10
+              const alterChannels = new Array(len);
+              for (let i = 0; i < len; i++) {
+                alterChannels[i] = i;
+              }
+
+              form.channels = alterChannels;
+            } else if (form.type === "freqChart" || form.type === "timeFreqChart") {
+              form.channels = 0
             }
-            form.channels = alterChannels;
           }
           if (typeof chart[form.type] === "function") {
             chart[form.type](form.name, form.preData, form.channels);
@@ -244,7 +225,6 @@ export default {
       onSubmit,
       placeholder,
       fileChange,
-      checkFilter,
       CH_NAMES,
       onReset,
       getPreDataList,
