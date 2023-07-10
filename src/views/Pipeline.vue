@@ -2,20 +2,20 @@
   <el-container>
     <el-header>
       <el-row justify="end">
-        <el-col :span="6">
-          <el-button icon="circle-plus" circle @click="dialogVisible=true"/>
-          <el-button icon="refresh" circle @click="refreshTasks"/>
+        <el-col :span="4">
+          <el-button icon="circle-plus" type="primary" circle @click="dialogVisible=true"/>
+          <el-button icon="refresh" type="primary" circle @click="refreshTasks"/>
         </el-col>
       </el-row>
     </el-header>
-    <el-main style="min-height: 600px;">
-      <el-empty :image-size="300" v-show="emptyShow"/>
-      <el-row justify="center"
-              align="middle"
-              :gutter="20"
-              class="pipeline-row"
-              v-for="task in taskList" :key="task.task_id">
-        <el-col :span="14">
+    <el-main style="min-height: 500px;">
+      <el-empty :image-size="350" v-show="emptyShow"/>
+      <el-row
+          align="middle"
+          :gutter="20"
+          class="pipeline-row"
+          v-for="task in taskList" :key="task.task_id">
+        <el-col :span="22">
           <el-steps :active="task.current_task.progress+1" finish-status="success"
                     :process-status="task.current_task.status.toLowerCase()"
                     simple>
@@ -176,8 +176,9 @@
       <el-drawer
           v-model="drawer"
           :title="drawerTitle"
-          size="25%"
+          :size="400"
           @open="drawerOpen"
+          style="min-width: 500px;"
       >
         <el-skeleton :rows="8" :loading="drawerLoading" animated>
           <el-table
@@ -233,7 +234,7 @@
       >
     </el-main>
     <el-footer style="text-align: center;">
-      <p style="color: #909399">Click progress to get more information</p>
+      <p style="color: #909399">Click progress icon could get more information</p>
     </el-footer>
   </el-container>
 

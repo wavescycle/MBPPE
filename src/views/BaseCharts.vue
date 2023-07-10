@@ -1,87 +1,91 @@
 <template>
-  <div class="container">
-    <el-form
-        :model="form"
-        class="demo-form-inline"
-        ref="formRef"
-        :rules="rules"
-        :inline="true"
-        label-width="80px"
-    >
-      <el-form-item label="Filename" prop="name" style="width: 220px">
-        <el-select
-            v-model="form.name"
-            :placeholder="placeholder"
-            @change="fileChange"
-        >
-          <!-- :loading="true" -->
-          <el-option
-              v-for="(file, i) of form.fileList"
-              :key="i"
-              :label="file"
-              :value="file"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item
-          label="Chart"
-          prop="type"
-          @change="chartChange"
-          style="width: 200px"
+  <el-container>
+    <el-header>
+      <el-form
+          :model="form"
+          ref="formRef"
+          :rules="rules"
+          :inline="true"
       >
-        <el-select v-model="form.type">
-          <el-option
-              v-for="item in options"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item
-          label="Channels"
-          prop="channels"
-          v-if="form.type !== 'psdChart'"
-          style="width: 240px"
-      >
-        <el-select
-            v-model="form.channels"
-            :multiple="multiple"
-            collapse-tags
-            :placeholder="channelsPlaceholder"
-            :multiple-limit="10"
-        >
-          <el-option
-              v-for="(ch, i) of CH_NAMES"
-              :key="i"
-              :label="ch"
-              :value="i"
-          ></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="PreData" prop="preData">
-        <el-select
-            v-model="form.preData"
-            @visible-change="getPreDataList"
-            :loading="getPreDataLoading"
-        >
-          <el-option
-              v-for="(preData, i) of form.preDataList"
-              :key="i"
-              :label="preData"
-              :value="preData"
+        <el-form-item label="Filename" prop="name">
+          <el-select
+              v-model="form.name"
+              :placeholder="placeholder"
+              @change="fileChange"
+              style="width: 150px"
           >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit">Submit</el-button>
-        <el-button @click="onReset">Reset</el-button>
-      </el-form-item>
-    </el-form>
-    <div id="main" ref="main"></div>
-  </div>
+            <el-option
+                v-for="(file, i) of form.fileList"
+                :key="i"
+                :label="file"
+                :value="file"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item
+            label="Chart"
+            prop="type"
+            @change="chartChange"
+
+        >
+          <el-select v-model="form.type" style="width: 150px">
+            <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+            label="Channels"
+            prop="channels"
+            v-if="form.type !== 'psdChart'"
+        >
+          <el-select
+              v-model="form.channels"
+              :multiple="multiple"
+              collapse-tags
+              :placeholder="channelsPlaceholder"
+              :multiple-limit="8"
+              style="width: 150px"
+          >
+            <el-option
+                v-for="(ch, i) of CH_NAMES"
+                :key="i"
+                :label="ch"
+                :value="i"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="PreData" prop="preData">
+          <el-select
+              v-model="form.preData"
+              @visible-change="getPreDataList"
+              :loading="getPreDataLoading"
+              style="width: 150px"
+          >
+            <el-option
+                v-for="(preData, i) of form.preDataList"
+                :key="i"
+                :label="preData"
+                :value="preData"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSubmit">Submit</el-button>
+          <el-button @click="onReset">Reset</el-button>
+        </el-form-item>
+      </el-form>
+    </el-header>
+    <el-main>
+      <el-empty :image-size="350" v-show="emptyShow"/>
+      <div id="main" ref="main" v-show="!emptyShow"></div>
+    </el-main>
+  </el-container>
 </template>
 
 <script>
@@ -136,7 +140,8 @@ export default {
       'freqChart': 'Freq',
       'timeFreqChart': 'Time_Freq'
     }
-    const width = 1200;
+    const emptyShow = ref(true)
+    const width = 1000;
     const height = 600;
     let chart;
 
@@ -144,7 +149,7 @@ export default {
         form.fileList.length ? "Select" : "Upload data first"
     );
     let channelsPlaceholder = computed(() =>
-        form.type === "lineChart" ? "10 channels are used by default" : "Select a channel"
+        form.type === "lineChart" ? "8 channels are used by default" : "Select a channel"
     );
     let multiple = computed(() => form.type === "lineChart");
     let chartChange = () => {
@@ -183,9 +188,10 @@ export default {
     const onSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {
+          emptyShow.value = false
           if (form.channels.length === 0) {
             if (form.type === "lineChart") {
-              const len = 10
+              const len = 8
               const alterChannels = new Array(len);
               for (let i = 0; i < len; i++) {
                 alterChannels[i] = i;
@@ -228,26 +234,15 @@ export default {
       CH_NAMES,
       onReset,
       getPreDataList,
-      getPreDataLoading
+      getPreDataLoading,
+      emptyShow
     };
   },
 };
 </script>
 
 <style scoped>
-/* .container {
-  padding: 10px;
-  position: relative;
-  border: 0px;
-  width: 100%;
-  height: 80%;
-} */
-/* .content-title {
-  clear: both;
-  font-weight: 400;
-  line-height: 50px;
-  margin: 10px 0;
-  font-size: 22px;
-  color: #1f2f3d;
-} */
+#main {
+  margin-top: 20px;
+}
 </style>
