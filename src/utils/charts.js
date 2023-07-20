@@ -225,7 +225,7 @@ class myChart {
                 // backgroundColor: "#000",
                 // X axis
                 xAxis: channels.map((e, i) => {
-                    const isShow = i === 9;
+                    const isShow = i === channels.length - 1;
                     return {
                         show: isShow,
                         type: "category",
@@ -242,7 +242,7 @@ class myChart {
                     return {
                         name: CH_NAMES[e],
                         nameLocation: "center",
-                        nameGap: 30,
+                        nameGap: 10,
                         nameRotate: 0,
                         axisLine: {
                             show: false,
@@ -274,11 +274,10 @@ class myChart {
                 tooltip: {
                     trigger: "axis",
                     position: function (pos, params, el, elRect, size) {
-                        var obj = {top: 10};
-                        obj[["left", "right"][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                        var obj = {top: 40};
+                        obj[["left", "right"][+(pos[0] < size.viewSize[0] / 2)]] = 100;
                         return obj;
                     },
-                    order: "valueDesc",
                     formatter: function (params) {
                         const info = params.map((e, i) => {
                             return {seriesName: e.seriesName, value: e.value[++i]};
@@ -289,13 +288,14 @@ class myChart {
             <p style="margin: 15px 0;padding: 0;">
             ${info
                             .map((e, i) => {
-                                return `<span style="display:"inline-block";width:20px">${e.seriesName}</span> <span>${e.value}</span>`;
+                                return `<span style="display:inline-block;width:50px">${e.seriesName}</span> <span>${e.value.toFixed(6)}</span>`;
                             })
                             .join("<br />")}
             <p/>
             </div>
             `;
                     },
+                    order: 'valueDesc'
                 },
                 toolbox: [
                     // save image to local
@@ -417,12 +417,36 @@ class myChart {
         this.preData = preData;
         this.start = start;
         this.end = end;
+        const colors = ["#83be82", "#e99c9d", "#6f6fe3", "#f18ef1", "#dc855f"]
         let data = await getFrequency(filename, channels, preData, {need_axis: true});
         const freqList = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
         if (data.status === 200) {
             const op = {
                 tooltip: {
                     trigger: "axis",
+                    triggerOn: "click",
+                    position: function (point, params, dom, rect, size) {
+                        // 返回 [x, y] 坐标的数组，这里你可以根据图表的大小返回一个固定的坐标值
+                        return [size.viewSize[0] - 90, point[1]];
+                    },
+                    formatter: function (params) {
+                        const info = params.map((e, i) => {
+                            return {seriesName: e.seriesName, value: e.value[++i]};
+                        });
+
+                        return `<div>Point ${params[0].dataIndex}
+                                <p style="margin: 15px 0;padding: 0;">
+                                    ${info.map((e, i) => {
+                            return `<span style="display:inline-block;width:60px;color:${colors[i]}">
+                                        ${e.seriesName}
+                                    </span>
+                                    <span style="color:${colors[i]}">${e.value.toFixed(3)}</span>`;
+                        })
+                            .join("<br />")}
+                                <p/>
+                                </div>
+                                `;
+                    },
                 },
                 toolbox: [
                     // save image to local
@@ -431,6 +455,9 @@ class myChart {
                     // this._toolbox_graph_change(),
                     // button to change data
                 ],
+                axisPointer: {
+                    link: {xAxisIndex: "all"},
+                },
                 dataZoom: [
                     {
                         type: "inside",
@@ -466,7 +493,7 @@ class myChart {
                         // name: "Frequency [Hz]",
                         nameLocation: "center",
                         nameRotate: 0,
-                        nameGap: 35,
+                        nameGap: 15,
                         axisLine: {
                             show: false,
                         },
@@ -483,7 +510,8 @@ class myChart {
                 series: freqList.map((e, i) => {
                     return {
                         type: "line",
-                        color: "black",
+                        name: e,
+                        color: colors[i],
                         showSymbol: false,
                         smooth: this.smooth,
                         seriesLayoutBy: this.seriesType,
