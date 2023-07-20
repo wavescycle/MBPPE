@@ -4,7 +4,6 @@ from flask import Flask, request, send_file, jsonify, abort, make_response, url_
 from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
-from scipy.io import loadmat
 from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica
 from customSchema import DataSchema, FilterSchema, BasicSchema
 from utils import get_data
@@ -48,8 +47,8 @@ DATA_STORAGE = dict()
 ALLOWED_EXTENSIONS = {'mat', 'npz', 'xlsx'}
 
 
-def transform_data(raw, file_type):
-    return getattr(load, file_type)(raw)
+def transform_data(raw, file_type, format_mode):
+    return getattr(load, file_type)(raw, format_mode)
 
 
 def allowed_file(filename):
@@ -80,7 +79,7 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 
             try:
                 if schema != Schema:
-                    params = schema(unknown=EXCLUDE).load(params)
+                    params = schema().load(params)
             except ValidationError as e:
                 abort(BAD_REQUEST, str(e.messages))
             filename = kwargs['filename']
@@ -191,38 +190,6 @@ class FileList(Resource):
 class FileTreeList(Resource):
     def get(self):
         file_trees = []
-        # TEST = {
-        #     'filename1': {
-        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
-        #         'Feature_Ext': {
-        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
-        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
-        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
-        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
-        #         },
-        #         'Info': {'sample_rate': 204}
-        #     },
-        #     'filename2': {
-        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
-        #         'Feature_Ext': {
-        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
-        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
-        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
-        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
-        #         },
-        #         'Info': {'sample_rate': 204}
-        #     },
-        #     'filename3': {
-        #         'Pre_Process': {'Raw': 1, 'Filter': 1},
-        #         'Feature_Ext': {
-        #             'Raw': {'PSD': 1, 'DE': 1, 'Freq': 1, 'Time_Freq': 1},
-        #             'Filter': {'PSD': 1, 'DE': 1, 'Freq': None, 'Time_Freq': None},
-        #             'ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None},
-        #             'Filter_ICA': {'PSD': 1, 'DE': None, 'Freq': None, 'Time_Freq': None}
-        #         },
-        #         'Info': {'sample_rate': 204}
-        #     }
-        # }
         for k, v in DATA_STORAGE.items():
             temp = {
                 'filename': k,
@@ -264,6 +231,7 @@ class Data(Resource):
     @init_data()
     def post(self, **kwargs):
         freq = request.form['freq']
+        format_mode = request.form['format']
         file = request.files['file']
         filename = kwargs['filename']
         storage = kwargs['storage']
@@ -272,7 +240,7 @@ class Data(Resource):
         is_allowed, file_type = allowed_file(filename)
         if file and is_allowed:
             # read file use stream
-            storage[storage_type] = transform_data(loadmat(file.stream), file_type)
+            storage[storage_type] = transform_data(file.stream, file_type, format_mode)
             info['sample_rate'] = int(freq)
             return 'CREATED', 201
         else:
