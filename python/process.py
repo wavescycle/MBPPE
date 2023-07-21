@@ -5,6 +5,18 @@ import numpy as np
 import pywt
 
 
+def re_reference(data, mode='average', channel=None):
+    if mode == 'average':
+        average_reference = np.mean(data, axis=0)
+        return data - average_reference
+    elif mode == 'channel':
+        if isinstance(channel, list):
+            channel = channel[0]
+        return data - data[channel]
+    elif mode == 'ear':
+        return data - np.mean(data[channel], axis=0)
+
+
 # pass filter
 def butter_filter(data, btype, low, high, order=6, fs=200):
     cutoff = list(filter(lambda it: it is not None, [low, high]))

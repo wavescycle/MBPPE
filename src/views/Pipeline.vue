@@ -8,7 +8,7 @@
         </el-col>
       </el-row>
     </el-header>
-    <el-main style="min-height: 500px;">
+    <el-main>
       <el-empty :image-size="350" v-show="emptyShow"/>
       <el-row
           align="middle"
@@ -96,6 +96,7 @@
                     <el-radio-group v-model="taskStepInfo.method">
                       <el-radio-button label="Filter"/>
                       <el-radio-button label="ICA"/>
+                      <el-radio-button label="Reference"/>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item
@@ -148,6 +149,39 @@
                       />
                     </el-col>
                   </el-form-item>
+                  <el-form-item label="Mode" v-if="taskStepInfo.method === 'Reference'" prop="info.mode" required>
+                    <el-select
+                        v-model="taskStepInfo.info.mode"
+                        collapse-tags
+                        placeholder="Reference Mode"
+                        :span="8"
+                    >
+                      <el-option
+                          v-for="(mode, i) of refMode"
+                          :key="i"
+                          :label="mode"
+                          :value="mode"
+                      ></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="Ref Channels"
+                                v-if="taskStepInfo.method==='Reference'&&taskStepInfo.info.mode !== 'average'"
+                                prop="info.refChannels"
+                                required>
+                    <el-select
+                        v-model="taskStepInfo.info.refChannels"
+                        multiple
+                        :span="8"
+                        :multiple-limit="taskStepInfo.info.mode==='ear'?2:1"
+                    >
+                      <el-option
+                          v-for="(file, i) of CH_NAMES"
+                          :key="i"
+                          :label="file"
+                          :value="i"
+                      ></el-option>
+                    </el-select>
+                  </el-form-item>
                 </el-tab-pane>
                 <el-tab-pane label="Feature Ext" name="feature-ext">
                   <el-form-item label="Method" prop="method" required>
@@ -167,7 +201,8 @@
           <span class="dialog-footer">
             <el-button @click="decreaseIndex"
                        :disabled="currentTaskIndex===0">Pre</el-button>
-            <el-button @click="increaseIndex(currentTaskIndex===0?taskAddRef:taskStepRef)">Next</el-button>
+            <el-button @click="increaseIndex(currentTaskIndex===0?taskAddRef:taskStepRef)"
+                       :disabled="taskTabRef==='feature-ext'">Next</el-button>
             <el-button type="primary" @click="submitTask(taskStepRef)"
                        :disabled="currentTaskIndex===0">Confirm</el-button>
           </span>
@@ -178,7 +213,6 @@
           :title="drawerTitle"
           :size="400"
           @open="drawerOpen"
-          style="min-width: 500px;"
       >
         <el-skeleton :rows="8" :loading="drawerLoading" animated>
           <el-table
@@ -211,7 +245,6 @@
                 <el-button type="danger">Remove</el-button>
               </template>
             </el-popconfirm>
-
           </div>
 
           <el-descriptions title="Task Info" :column="1" style="margin-top: 20px" border>
@@ -285,6 +318,7 @@ export default {
       'ERROR': 'exception',
       'WAIT': 'warning',
     }
+    const refMode = ["average", "channel", "ear"]
     const drawerOpen = () => {
       drawerLoading.value = true
     }
@@ -524,7 +558,8 @@ export default {
       emptyShow,
       specialTaskInfo,
       removeSpecialTask,
-      taskDataExportProgress
+      taskDataExportProgress,
+      refMode
     }
   }
 }

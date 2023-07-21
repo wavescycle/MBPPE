@@ -20,6 +20,7 @@
         <el-radio-group v-model="form.process">
           <el-radio-button label="Filter"/>
           <el-radio-button label="ICA"/>
+          <el-radio-button label="Reference"/>
         </el-radio-group>
       </el-form-item>
       <el-form-item
@@ -85,7 +86,7 @@
       <el-form-item
           label="Channels"
           prop="channels"
-          v-if="form.process === 'Filter'"
+          v-if="form.process !== 'ICA'"
       >
         <el-select
             v-model="form.channels"
@@ -93,6 +94,36 @@
             collapse-tags
             placeholder="Default full selection"
             :span="8"
+        >
+          <el-option
+              v-for="(file, i) of CH_NAMES"
+              :key="i"
+              :label="file"
+              :value="i"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="Mode" v-if="form.process === 'Reference'" prop="mode">
+        <el-select
+            v-model="form.refMode"
+            collapse-tags
+            placeholder="Reference Mode"
+            :span="8"
+        >
+          <el-option
+              v-for="(mode, i) of refMode"
+              :key="i"
+              :label="mode"
+              :value="mode"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="Ref Channels" v-if="form.refMode !== 'average'" prop="refChannels" required>
+        <el-select
+            v-model="form.refChannels"
+            multiple
+            :span="8"
+            :multiple-limit="form.refMode==='ear'?2:1"
         >
           <el-option
               v-for="(file, i) of CH_NAMES"
@@ -111,9 +142,9 @@
 </template>
 
 <script>
-import {reactive, ref, computed} from "vue";
+import {reactive, ref, computed, onMounted, watch} from "vue";
 import {ElMessage, ElLoading} from "element-plus";
-import {getFileList, postFilter, postICA, getPreData} from "../utils/api";
+import {getFileList, postFilter, postICA, getPreData, postReference} from "../utils/api";
 import {CH_NAMES} from "../config/config.json";
 
 export default {
@@ -125,6 +156,7 @@ export default {
       low: [{required: true, message: "Enter the frequency", trigger: "blur"}],
       high: [{required: true, message: "Enter the frequency", trigger: "blur"}],
     };
+    const refMode = ["average", "channel", "ear"]
     const formRef = ref(null);
     const loading = ref(null);
     const getPreDataLoading = ref(null)
@@ -138,12 +170,11 @@ export default {
       filter: false,
       fileList: [],
       preData: "",
-      preDataList: []
+      preDataList: [],
+      refMode: "average",
+      refChannels: []
     });
 
-    getFileList().then((res) => {
-      form.fileList = res.data;
-    });
     const label = computed(() => {
       let labels = {
         low: "Cutoff Frequency",
@@ -155,6 +186,7 @@ export default {
       }
       return labels;
     });
+
     let placeholder = computed(() =>
         form.fileList?.length ? "Select" : "Upload data first"
     );
@@ -168,20 +200,6 @@ export default {
         }
       }
     }
-    const checkFilter = async () => {
-      loading.value = true;
-      if (form.filter) {
-        form.filter = false;
-      } else {
-        const res = await getFileList(true);
-        if (res.data.indexOf(form.name) !== -1) {
-          form.filter = true;
-        } else {
-          ElMessage.error(`Filter the ${form.name} first`);
-        }
-      }
-      loading.value = false;
-    };
     // Submit
     const onSubmit = () => {
       // Form validation
@@ -197,13 +215,15 @@ export default {
           let channels = form.channels;
           if (channels.length === 0) channels = CH_NAMES.map((e, i) => i);
           let res;
-          if (process == "Filter") {
+          if (process === "Filter") {
             const low = form.low;
             const high = form.high;
             res = await postFilter(name, channels, methods, low, high, form.preData);
-          } else if (process == "ICA") {
-            console.log("ICA");
+          } else if (process === "ICA") {
             res = await postICA(name, form.preData);
+          } else if (process === "Reference") {
+            const refCh = Array.isArray(form.refChannels) ? form.refChannels : [form.refChannels]
+            res = await postReference(name, channels, form.preData, {mode: form.refMode, ref_ch: refCh})
           }
           loading.close();
           if (res.status === 200) ElMessage.success("success");
@@ -218,6 +238,11 @@ export default {
       formRef.value.resetFields();
     };
 
+    onMounted(() => {
+      getFileList().then((res) => {
+        form.fileList = res.data;
+      });
+    })
     return {
       rules,
       CH_NAMES,
@@ -229,7 +254,8 @@ export default {
       placeholder,
       onSubmit,
       onReset,
-      getPreDataList
+      getPreDataList,
+      refMode
     };
   },
 };

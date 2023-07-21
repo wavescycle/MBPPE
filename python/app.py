@@ -4,8 +4,8 @@ from flask import Flask, request, send_file, jsonify, abort, make_response, url_
 from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
-from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica
-from customSchema import DataSchema, FilterSchema, BasicSchema
+from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference
+from customSchema import DataSchema, FilterSchema, BasicSchema, RefSchema
 from utils import get_data
 from functools import wraps
 from datetime import datetime
@@ -79,7 +79,7 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 
             try:
                 if schema != Schema:
-                    params = schema().load(params)
+                    params = schema(unknown=EXCLUDE).load(params)
             except ValidationError as e:
                 abort(BAD_REQUEST, str(e.messages))
             filename = kwargs['filename']
@@ -249,6 +249,28 @@ class Data(Resource):
     def delete(self, filename):
         del DATA_STORAGE[filename]
         return 'Ok'
+
+
+class Reference(Resource):
+    @init_data(RefSchema, storage_type='Ref')
+    @init_channels('Ref')
+    def get(self, **kwargs):
+        data, is_none = get_data(**kwargs)
+        need_axis = kwargs['params']['need_axis']
+
+        return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
+
+    @init_data(RefSchema, storage_type='Ref')
+    @init_channels('Ref')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        params = kwargs['params']
+        storage_type = kwargs['modify_storage_type']
+        print(params)
+
+        raw = copy.deepcopy(source)
+        storage[storage_type] = re_reference(raw, mode=params['mode'], channel=params['ref_ch'])
 
 
 class Filter(Resource):
@@ -543,6 +565,7 @@ api.add_resource(Frequency, '/frequency/<string:filename>')
 api.add_resource(TimeFrequency, '/timefrequency/<string:filename>')
 api.add_resource(Task, '/task', '/task/<string:task_id>', '/task/<string:task_id>/<string:filename>')
 api.add_resource(FileTreeList, '/filetreelist')
+api.add_resource(Reference, '/reference/<string:filename>')
 
 if __name__ == '__main__':
     app.debug = True

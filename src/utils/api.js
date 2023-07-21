@@ -229,6 +229,23 @@ async function getFileTreeList() {
     return await req.get('/filetreelist')
 }
 
+async function getReference(filename, channels, pre_data, config = {}) {
+    return await req.get(`/reference/${filename}`, {
+        params: delEmptyItems({
+            channels: channels,
+            pre_data: pre_data,
+            ...config
+        })
+    })
+}
+
+async function postReference(filename, channels, pre_data, config = {}) {
+    return await req.post(`/reference/${filename}`, {
+        channels: channels,
+        pre_data: pre_data,
+        ...config
+    })
+}
 
 export {
     checkStatus,
@@ -255,5 +272,7 @@ export {
     getAllTaskStatus,
     getTaskData,
     postTask,
-    getFileTreeList
+    getFileTreeList,
+    getReference,
+    postReference
 };

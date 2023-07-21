@@ -1,9 +1,10 @@
 from process import butter_filter
 from enum import Enum
 from copy import deepcopy
-from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica
+from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference
 import traceback
-from customSchema import AsyncFilterSchema
+from marshmallow import EXCLUDE
+from customSchema import AsyncFilterSchema, AsyncRefSchema
 
 
 # from app import DATA_STORAGE
@@ -153,3 +154,8 @@ def async_time_freq(data, info, **kwargs):
     freq = kwargs['sample_rate']
     channels = slice(None)
     return time_frequency(data, channels, fs=freq)
+
+
+def async_reference(data, info, **kwargs):
+    info = AsyncRefSchema(unknown=EXCLUDE).load(info)
+    return re_reference(data, mode=info.get('mode'), channel=info.get('ref_ch'))
