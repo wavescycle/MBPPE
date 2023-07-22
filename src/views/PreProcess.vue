@@ -21,6 +21,7 @@
           <el-radio-button label="Filter"/>
           <el-radio-button label="ICA"/>
           <el-radio-button label="Reference"/>
+          <el-radio-button label="Resample"/>
         </el-radio-group>
       </el-form-item>
       <el-form-item
@@ -86,7 +87,7 @@
       <el-form-item
           label="Channels"
           prop="channels"
-          v-if="form.process !== 'ICA'"
+          v-if="form.process !== 'ICA'&&form.process !== 'Resample'"
       >
         <el-select
             v-model="form.channels"
@@ -133,6 +134,13 @@
           ></el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="Sampling Rate" v-if="form.process==='Resample'" prop="fs" required>
+        <el-input-number
+            v-model="form.fs"
+            :min="0"
+            style="width: 220px"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
         <el-button @click="onReset">Reset</el-button>
@@ -144,7 +152,7 @@
 <script>
 import {reactive, ref, computed, onMounted, watch} from "vue";
 import {ElMessage, ElLoading} from "element-plus";
-import {getFileList, postFilter, postICA, getPreData, postReference} from "../utils/api";
+import {getFileList, postFilter, postICA, getPreData, postReference, postResample} from "../utils/api";
 import {CH_NAMES} from "../config/config.json";
 
 export default {
@@ -172,7 +180,8 @@ export default {
       preData: "",
       preDataList: [],
       refMode: "average",
-      refChannels: []
+      refChannels: [],
+      fs: null
     });
 
     const label = computed(() => {
@@ -224,6 +233,8 @@ export default {
           } else if (process === "Reference") {
             const refCh = Array.isArray(form.refChannels) ? form.refChannels : [form.refChannels]
             res = await postReference(name, channels, form.preData, {mode: form.refMode, ref_ch: refCh})
+          } else if (process === "Resample") {
+            res = await postResample(name, form.preData, {new_fs: form.fs})
           }
           loading.close();
           if (res.status === 200) ElMessage.success("success");

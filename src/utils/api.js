@@ -247,6 +247,23 @@ async function postReference(filename, channels, pre_data, config = {}) {
     })
 }
 
+async function getResample(filename, channels, pre_data, config = {}) {
+    return await req.get(`/resample/${filename}`, {
+        params: delEmptyItems({
+            channels: channels,
+            pre_data: pre_data,
+            ...config
+        })
+    })
+}
+
+async function postResample(filename, pre_data, config = {}) {
+    return await req.post(`/resample/${filename}`, {
+        pre_data: pre_data,
+        ...config
+    })
+}
+
 export {
     checkStatus,
     getData,
@@ -274,5 +291,7 @@ export {
     postTask,
     getFileTreeList,
     getReference,
-    postReference
+    postReference,
+    getResample,
+    postResample
 };

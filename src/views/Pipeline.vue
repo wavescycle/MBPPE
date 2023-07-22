@@ -43,9 +43,9 @@
           :close-on-click-modal="false"
       >
         <template #title>
-          <el-steps :active="currentTaskIndex" finish-status="success">
-            <el-step title="Step 1" description="Choose File"/>
-            <el-step :title="'Step'+(index+1)" v-for="(item,index) in taskAddData.tasks"
+          <el-steps :active="currentTaskIndex" finish-status="success" :space="100">
+            <el-step title="Step 1" description="File"/>
+            <el-step :title="'Step'+(index+2)" v-for="(item,index) in taskAddData.tasks"
                      :description="item.task.method"/>
           </el-steps>
         </template>
@@ -97,6 +97,7 @@
                       <el-radio-button label="Filter"/>
                       <el-radio-button label="ICA"/>
                       <el-radio-button label="Reference"/>
+                      <el-radio-button label="Resample"/>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item
@@ -181,6 +182,14 @@
                           :value="i"
                       ></el-option>
                     </el-select>
+                  </el-form-item>
+                  <el-form-item label="Sampling Rate" v-if="taskStepInfo.method==='Resample'" prop="info.new_fs"
+                                required>
+                    <el-input-number
+                        v-model="taskStepInfo.info.new_fs"
+                        :min="0"
+                        style="width: 220px"
+                    />
                   </el-form-item>
                 </el-tab-pane>
                 <el-tab-pane label="Feature Ext" name="feature-ext">
@@ -478,6 +487,7 @@ export default {
       validateRef.validate((valid) => {
         if (valid) {
           addTaskToData()
+
           postTask(taskAddData).then(res => {
             refreshTasks()
           })

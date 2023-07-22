@@ -4,8 +4,8 @@ from flask import Flask, request, send_file, jsonify, abort, make_response, url_
 from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
-from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference
-from customSchema import DataSchema, FilterSchema, BasicSchema, RefSchema
+from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
+from customSchema import DataSchema, FilterSchema, BasicSchema, RefSchema, SampleSchema
 from utils import get_data
 from functools import wraps
 from datetime import datetime
@@ -271,6 +271,30 @@ class Reference(Resource):
 
         raw = copy.deepcopy(source)
         storage[storage_type] = re_reference(raw, mode=params['mode'], channel=params['ref_ch'])
+
+
+class Resample(Resource):
+    @init_data(SampleSchema, storage_type='Sample')
+    @init_channels('Sample')
+    def get(self, **kwargs):
+        data, is_none = get_data(**kwargs)
+        need_axis = kwargs['params']['need_axis']
+
+        return send_file(stream_data(data, need_axis), mimetype="application/octet-stream")
+
+    @init_data(SampleSchema, storage_type='Sample')
+    @init_channels('Sample')
+    def post(self, **kwargs):
+        source = kwargs['source']
+        storage = kwargs['storage']
+        info = kwargs['info']
+        params = kwargs['params']
+        storage_type = kwargs['modify_storage_type']
+
+        raw = copy.deepcopy(source)
+        # filter data
+        storage[storage_type] = resample(raw, fs=info['sample_rate'], new_fs=params['new_fs'])
+        return 'OK'
 
 
 class Filter(Resource):
@@ -566,6 +590,7 @@ api.add_resource(TimeFrequency, '/timefrequency/<string:filename>')
 api.add_resource(Task, '/task', '/task/<string:task_id>', '/task/<string:task_id>/<string:filename>')
 api.add_resource(FileTreeList, '/filetreelist')
 api.add_resource(Reference, '/reference/<string:filename>')
+api.add_resource(Resample, '/resample/<string:filename>')
 
 if __name__ == '__main__':
     app.debug = True

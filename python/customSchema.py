@@ -55,6 +55,10 @@ class RefSchema(BaseSchema):
         return value
 
 
+class SampleSchema(BaseSchema):
+    new_fs = fields.Int(data_key="new_fs", required=True)
+
+
 class AsyncFilterSchema(Schema):
     method = fields.Str(data_key="method", validate=OneOf((['low', 'high', 'band'])))
     low = fields.Float(data_key="low", missing=None)

@@ -1,4 +1,4 @@
-from scipy.signal import butter, filtfilt, welch, windows
+from scipy.signal import butter, filtfilt, welch, windows, resample_poly
 from scipy.fft import rfft, rfftfreq
 from sklearn.decomposition import FastICA
 import numpy as np
@@ -15,6 +15,10 @@ def re_reference(data, mode='average', channel=None):
         return data - data[channel]
     elif mode == 'ear':
         return data - np.mean(data[channel], axis=0)
+
+
+def resample(data, fs, new_fs):
+    return resample_poly(data, new_fs, fs, axis=1)
 
 
 # pass filter
