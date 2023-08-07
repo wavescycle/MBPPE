@@ -61,7 +61,7 @@ export default {
       {
         icon: "home-filled",
         index: "/dashboard",
-        title: "HomePage",
+        title: "Dashboard",
       },
       {
         icon: "folder-add",
@@ -75,11 +75,11 @@ export default {
         subs: [
           {
             index: "/preprocess",
-            title: "Pre-processing",
+            title: "Pre-process",
           },
           {
             index: "/feature",
-            title: "Feature extraction",
+            title: "Analyse",
           },
         ],
       },

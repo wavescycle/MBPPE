@@ -19,6 +19,7 @@
     "ndarray": "^1.0.19",
     "ndarray-unpack": "^1.0.0",
     "qs": "^6.10.3",
+    "tree-kill": "^1.2.2",
     "vue": "^3.2.25",
     "vue-router": "^4.0.14",
     "vuex": "^4.0.2"

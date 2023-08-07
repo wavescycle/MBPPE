@@ -1,6 +1,7 @@
 {
   "URL": "http://localhost",
   "PORT": 5000,
+  "USE_LOCAL_SERVER": true,
   "CH_NAMES": [
     "Fp1",
     "Fpz",
@@ -55,7 +56,7 @@
     "PO7",
     "PO5",
     "PO3",
-    " POz ",
+    "POz",
     "PO4",
     "PO6",
     "PO8",
