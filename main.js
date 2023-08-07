@@ -32,9 +32,14 @@ app.on("ready", () => {
         localSever = spawn("python", ["./python/app.py"]);
         // localSever = execFile(path.join(__dirname, "./server/server.exe"));
 
-        localSever.stdout.on("data", function (data) {
+        localSever.stdout.on("data", (data) => {
             console.log(`LOCAL SERVER:\n${data}`);
         });
+
+        localSever.stderr.on("data", (data) => {
+            console.error(`LOCAL SERVER:\n${data}`);
+        })
+
     }
 });
 
