@@ -107,9 +107,9 @@
                       required
                   >
                     <el-select v-model="taskStepInfo.info.method" placeholder="Select">
-                      <el-option key="low" label="Low-pass filter" value="low"></el-option>
-                      <el-option key="high" label="High-pass filter" value="high"></el-option>
-                      <el-option key="band" label="Bandpass filter" value="band"></el-option>
+                      <el-option key="lowpass" label="Low-pass filter" value="lowpass"></el-option>
+                      <el-option key="highpass" label="High-pass filter" value="highpass"></el-option>
+                      <el-option key="bandpass" label="Bandpass filter" value="bandpass"></el-option>
                     </el-select>
                   </el-form-item>
                   <el-form-item
@@ -117,7 +117,7 @@
                       prop="info.low"
                       v-if="
           taskStepInfo.method === 'Filter' &&
-          (taskStepInfo.info.method === 'low' || taskStepInfo.info.method === 'band')
+          (taskStepInfo.info.method === 'lowpass' || taskStepInfo.info.method === 'bandpass')
         "
                       required
 
@@ -136,7 +136,7 @@
                       prop="info.high"
                       v-if="
           taskStepInfo.method === 'Filter' &&
-          (taskStepInfo.info.method === 'high' || taskStepInfo.info.method === 'band')
+          (taskStepInfo.info.method === 'highpass' || taskStepInfo.info.method === 'bandpass')
         "
                       required
 
@@ -421,7 +421,7 @@ export default {
         low: "Cutoff Frequency",
         high: "Cutoff Frequency",
       };
-      if (taskStepInfo.info.method === "band") {
+      if (taskStepInfo.info.method === "bandpass") {
         labels.low = "Lowest Frequency";
         labels.high = "Highest Frequency";
       }

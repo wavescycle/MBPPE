@@ -1,7 +1,6 @@
-from process import butter_filter
 from enum import Enum
 from copy import deepcopy
-from process import butter_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
+from process import fir_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
 import traceback
 from marshmallow import EXCLUDE
 from customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema
@@ -129,7 +128,7 @@ def async_filter(data, info, **kwargs):
     low = info.get('low')
     high = info.get('high')
     method = info['method']
-    return butter_filter(data, btype=method, low=low, high=high, fs=kwargs['sample_rate'])
+    return fir_filter(data, btype=method, low=low, high=high, fs=kwargs['sample_rate'])
 
 
 def async_ica(data, info, **kwargs):

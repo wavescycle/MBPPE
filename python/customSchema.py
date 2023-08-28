@@ -25,7 +25,7 @@ class DataSchema(BaseSchema):
 
 
 class FilterSchema(BaseSchema):
-    method = fields.Str(data_key="method", validate=OneOf((['low', 'high', 'band'])))
+    method = fields.Str(data_key="method", validate=OneOf((['lowpass', 'highpass', 'bandpass'])))
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
     channels = fields.List(fields.Int, required=True, data_key="channels")
@@ -60,7 +60,7 @@ class SampleSchema(BaseSchema):
 
 
 class AsyncFilterSchema(Schema):
-    method = fields.Str(data_key="method", validate=OneOf((['low', 'high', 'band'])))
+    method = fields.Str(data_key="method", validate=OneOf((['lowpass', 'highpass', 'bandpass'])))
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
 

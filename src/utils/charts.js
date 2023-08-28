@@ -229,7 +229,7 @@ class myChart {
                     return {
                         show: isShow,
                         type: "category",
-                        name: "Sample Points",
+                        name: "Time [s]",
                         nameGap: 35,
                         nameLocation: "center",
                         gridIndex: i,
@@ -374,7 +374,7 @@ class myChart {
                 },
                 // Y axis
                 yAxis: {
-                    name: "PSD [V**2/Hz]",
+                    name: "PSD",
                     nameLocation: "center",
                     nameGap: 30,
                 },
@@ -424,7 +424,6 @@ class myChart {
             const op = {
                 tooltip: {
                     trigger: "axis",
-                    triggerOn: "click",
                     position: function (point, params, dom, rect, size) {
                         // 返回 [x, y] 坐标的数组，这里你可以根据图表的大小返回一个固定的坐标值
                         return [size.viewSize[0] - 90, point[1]];
@@ -478,7 +477,7 @@ class myChart {
                     return {
                         type: "category",
                         show: isShow,
-                        name: "Sample Points",
+                        name: "Time [s]",
                         nameLocation: "center",
                         nameGap: 35,
                         gridIndex: i,
@@ -500,6 +499,9 @@ class myChart {
                         axisLabel: {
                             show: false,
                             interval: (index, value) => value % 1 === 0,
+                        },
+                        splitLine: {
+                            show: false
                         },
                     };
                 }),
@@ -540,7 +542,6 @@ class myChart {
         let data = await getTimeFrequency(filename, channels, preData, {start, end});
         if (data.status === 200) {
             const maxvalue = data.headers.maxvalue;
-            console.log(maxvalue);
             const op = {
                 tooltip: {
                     formatter: (params) => {
@@ -582,10 +583,14 @@ class myChart {
                     // },
                 },
                 visualMap: {
-                    type: "piecewise",
+                    // type: "piecewise",
+                    align: "left",
+                    right: 45,
+                    bottom: 65,
+                    itemWidth: 14,
                     maxOpen: true,
                     max: Math.floor(maxvalue / 7) * 7,
-                    splitNumber: 7,
+                    // splitNumber: 7,
                     calculable: true,
                     // realtime: false,
                     // splitNumber: 10,

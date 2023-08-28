@@ -30,9 +30,9 @@
           v-if="form.process === 'Filter'"
       >
         <el-select v-model="form.methods" placeholder="Select">
-          <el-option key="low" label="Low-pass filter" value="low"></el-option>
-          <el-option key="high" label="High-pass filter" value="high"></el-option>
-          <el-option key="band" label="Bandpass filter" value="band"></el-option>
+          <el-option key="lowpass" label="Low-pass filter" value="lowpass"></el-option>
+          <el-option key="highpass" label="High-pass filter" value="highpass"></el-option>
+          <el-option key="bandpass" label="Bandpass filter" value="bandpass"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item
@@ -40,7 +40,7 @@
           prop="low"
           v-if="
           form.process === 'Filter' &&
-          (form.methods === 'low' || form.methods === 'band')
+          (form.methods === 'lowpass' || form.methods === 'bandpass')
         "
       >
         <el-col :span="4">
@@ -57,7 +57,7 @@
           prop="high"
           v-if="
           form.process === 'Filter' &&
-          (form.methods === 'high' || form.methods === 'band')
+          (form.methods === 'highpass' || form.methods === 'bandpass')
         "
       >
         <el-col :span="4">
@@ -189,7 +189,7 @@ export default {
         low: "Cutoff Frequency",
         high: "Cutoff Frequency",
       };
-      if (form.methods === "band") {
+      if (form.methods === "bandpass") {
         labels.low = "Lowest Frequency";
         labels.high = "Highest Frequency";
       }

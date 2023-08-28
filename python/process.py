@@ -1,4 +1,4 @@
-from scipy.signal import butter, filtfilt, welch, windows, resample_poly
+from scipy.signal import welch, windows, resample_poly, firwin, lfilter
 from scipy.fft import rfft, rfftfreq
 from sklearn.decomposition import FastICA
 import numpy as np
@@ -22,10 +22,10 @@ def resample(data, fs, new_fs):
 
 
 # pass filter
-def butter_filter(data, btype, low, high, order=6, fs=200):
+def fir_filter(data, btype, low, high, numtaps=61, fs=200):
     cutoff = list(filter(lambda it: it is not None, [low, high]))
-    b, a = butter(order, cutoff, btype, fs=fs)
-    return filtfilt(b, a, data)
+    b = firwin(numtaps, cutoff, pass_zero=btype, fs=fs)
+    return lfilter(b, [1.0], data)
 
 
 # power spectrum
@@ -150,5 +150,4 @@ def time_frequency(data, channel, fs=200, scale=20, wavename='cgau8'):
 
 # ICA
 def ica(data):
-    ica = FastICA()
-    return ica.fit_transform(data.T).T
+    return FastICA().fit_transform(data.T).T
