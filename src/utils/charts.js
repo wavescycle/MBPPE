@@ -1,5 +1,5 @@
 import {CH_NAMES} from "../config/config.json";
-import {getData, getPSD, getFrequency, getTimeFrequency} from "./api";
+import {getData, getFrequency, getPSD, getTimeFrequency} from "./api";
 
 class myChart {
     // Constants
@@ -71,28 +71,83 @@ class myChart {
 
     // graph change, line, PSD
     _toolbox_graph_change() {
-        const config = {
+        return {
             show: true,
             showTitle: false,
             x: "center",
             top: 30,
             itemGap: 20,
             feature: {
-                my_line: {
+                my_continuous_PSD: {
                     show: true,
-                    title: "LINE",
+                    title: "continuous",
                     icon: "path://M25.6 537.1392a25.6 25.6 0 1 1 0-51.2h141.1072a25.6 25.6 0 0 0 24.5248-18.2272l118.1184-393.7792a51.2 51.2 0 0 1 98.0992 0L665.6 934.4l118.1184-393.728a76.8 76.8 0 0 1 73.5744-54.784H998.4a25.6 25.6 0 1 1 0 51.2h-141.1072a25.6 25.6 0 0 0-24.5248 18.2272l-118.1184 393.7792a51.2 51.2 0 0 1-98.0992 0L358.4 88.6272 240.2816 482.4064a76.8 76.8 0 0 1-73.5744 54.784H25.6z",
                     onclick: () => {
-                        this.lineChart(this.filename, this.preData, this.channels);
+                        const currentOption = this.chart.getOption()
+                        const visualMap = currentOption.visualMap[0]
+                        currentOption.visualMap = {
+                            type: "continuous",
+                            align: "left",
+                            right: 45,
+                            bottom: 65,
+                            itemWidth: 14,
+                            maxOpen: true,
+                            max: visualMap.max,
+                            calculable: true,
+                            precision: 0,
+                            inRange: {
+                                color: [
+                                    "#313695",
+                                    "#4575b4",
+                                    "#74add1",
+                                    "#abd9e9",
+                                    "#e0f3f8",
+                                    "#ffffbf",
+                                    "#fee090",
+                                    "#fdae61",
+                                    "#f46d43",
+                                    "#d73027",
+                                    "#a50026",
+                                ],
+                            },
+                        }
+                        this.chart.setOption(currentOption, {replaceMerge: ['visualMap']})
                     },
                 },
-                my_psd: {
+                my_piecewise_PSD: {
                     show: true,
-                    title: "PSD",
+                    title: "piecewise",
                     icon: "path://M901.3 357.4c-21.3-50.3-51.7-95.5-90.5-134.3-38.8-38.8-84-69.3-134.3-90.5C624.4 110.5 569 99.4 512 99.4s-112.4 11.2-164.5 33.2c-50.3 21.3-95.5 51.7-134.3 90.5-38.8 38.8-69.3 84-90.5 134.3-22 52.1-33.2 107.4-33.2 164.5s11.2 112.4 33.2 164.5c21.3 50.3 51.7 95.5 90.5 134.3 38.8 38.8 84 69.3 134.3 90.5 52.1 22 107.4 33.2 164.5 33.2s112.4-11.2 164.5-33.2c50.3-21.3 95.5-51.7 134.3-90.5 38.8-38.8 69.3-84 90.5-134.3 22-52.1 33.2-107.4 33.2-164.5s-11.2-112.4-33.2-164.5zM512 144.4c208.2 0 377.5 169.3 377.5 377.5 0 3.5-0.1 7-0.1 10.5h-58.9c-17.8 0-33.4-9.9-33.4-21.2v-106c0-14.3-7.4-28-20.2-37.6-11.7-8.8-27.1-13.6-43.2-13.6s-31.5 4.8-43.2 13.6c-12.8 9.6-20.2 23.3-20.2 37.6v242.9c0 11.3-15.6 21.2-33.4 21.2h-10.2c-17.8 0-33.4-9.9-33.4-21.2V284.2c0-14.3-7.4-28-20.2-37.6-11.7-8.8-27.1-13.6-43.2-13.6h-16.3c-16.2 0-31.5 4.8-43.2 13.6-12.8 9.6-20.2 23.3-20.2 37.6v434.3c0 11.3-15.6 21.2-33.4 21.2H397c-17.8 0-33.4-9.9-33.4-21.2V355.2c0-14.3-7.4-28-20.2-37.6-11.7-8.8-27.1-13.6-43.2-13.6h-9.7c-16.2 0-31.5 4.8-43.2 13.6-12.8 9.6-20.2 23.3-20.2 37.6v156c0 11.3-15.6 21.2-33.4 21.2h-58.9c-0.1-3.5-0.1-7-0.1-10.5-0.2-208.2 169.1-377.5 377.3-377.5z m0 755c-194.5 0-355-147.8-375.3-337h56.9c16.2 0 31.5-4.8 43.2-13.6 12.8-9.6 20.2-23.3 20.2-37.6v-156c0-11.3 15.6-21.2 33.4-21.2h9.7c17.8 0 33.4 9.9 33.4 21.2v363.4c0 14.3 7.4 28 20.2 37.6 11.7 8.8 27.1 13.6 43.2 13.6h19.4c16.2 0 31.5-4.8 43.2-13.6 12.8-9.6 20.2-23.3 20.2-37.6V284.2c0-11.3 15.6-21.2 33.4-21.2h16.3c17.8 0 33.4 9.9 33.4 21.2V648c0 14.3 7.4 28 20.2 37.6 11.7 8.8 27.1 13.6 43.2 13.6h10.2c16.2 0 31.5-4.8 43.2-13.6 12.8-9.6 20.2-23.3 20.2-37.6V405.2c0-11.3 15.6-21.2 33.4-21.2 17.8 0 33.4 9.9 33.4 21.2v106c0 14.3 7.4 28 20.2 37.6 11.7 8.8 27.1 13.6 43.2 13.6h56.9c-19.9 189.2-180.4 337-374.9 337z",
-                    // iconStyle: { color: "red" },
                     onclick: () => {
-                        this.psdChart(this.filename, this.preData);
+                        const currentOption = this.chart.getOption()
+                        const visualMap = currentOption.visualMap[0]
+                        currentOption.visualMap = {
+                            type: "piecewise",
+                            align: "left",
+                            right: 0,
+                            bottom: 65,
+                            itemWidth: 14,
+                            maxOpen: true,
+                            max: visualMap.max,
+                            calculable: true,
+                            precision: 0,
+                            inRange: {
+                                color: [
+                                    "#313695",
+                                    "#4575b4",
+                                    "#74add1",
+                                    "#abd9e9",
+                                    "#e0f3f8",
+                                    "#ffffbf",
+                                    "#fee090",
+                                    "#fdae61",
+                                    "#f46d43",
+                                    "#d73027",
+                                    "#a50026",
+                                ],
+                            },
+                        }
+                        this.chart.setOption(currentOption, {replaceMerge: ['visualMap']})
                     },
                 },
             },
@@ -100,7 +155,6 @@ class myChart {
             right: 10,
             tooltip: this.custom_tooltips,
         };
-        return config;
     }
 
     // data change, up and down
@@ -303,7 +357,7 @@ class myChart {
                     // button to change graph type
                     // this._toolbox_graph_change(),
                     // button to change data
-                    this._toolbox_data_change(),
+                    // this._toolbox_data_change()
                 ],
                 dataset: {
                     source: data.data,
@@ -451,8 +505,7 @@ class myChart {
                     // save image to local
                     this._toolbox_image_save(),
                     // button to change graph type
-                    // this._toolbox_graph_change(),
-                    // button to change data
+                    this._toolbox_graph_change(),
                 ],
                 axisPointer: {
                     link: {xAxisIndex: "all"},
@@ -555,7 +608,7 @@ class myChart {
                     // save image to local
                     this._toolbox_image_save(),
                     // button to change graph type
-                    // this._toolbox_graph_change(),
+                    this._toolbox_graph_change(),
                     // button to change data
                     this._toolbox_data_change_time_freq(),
                 ],
@@ -583,9 +636,9 @@ class myChart {
                     // },
                 },
                 visualMap: {
-                    // type: "piecewise",
+                    type: "piecewise",
                     align: "left",
-                    right: 45,
+                    right: 0,
                     bottom: 65,
                     itemWidth: 14,
                     maxOpen: true,
