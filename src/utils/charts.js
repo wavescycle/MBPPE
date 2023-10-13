@@ -60,6 +60,7 @@ class myChart {
             feature: {
                 saveAsImage: {
                     title: "SAVE",
+                    type: "jpg"
                 },
             },
             tooltip: this.custom_tooltips,
@@ -88,7 +89,7 @@ class myChart {
                         currentOption.visualMap = {
                             type: "continuous",
                             align: "left",
-                            right: 45,
+                            right: 0,
                             bottom: 65,
                             itemWidth: 14,
                             maxOpen: true,
@@ -110,6 +111,9 @@ class myChart {
                                     "#a50026",
                                 ],
                             },
+                            textStyle: {
+                                fontSize: 14
+                            }
                         }
                         this.chart.setOption(currentOption, {replaceMerge: ['visualMap']})
                     },
@@ -264,10 +268,11 @@ class myChart {
 
         if (data.status === 200) {
             const op = {
-                title: {
-                    left: "center",
-                    text: "EEG line figure",
-                },
+                textStyle: {fontSize: 16},
+                // title: {
+                //     left: "center",
+                //     text: "EEG line figure",
+                // },
                 grid: channels.map((e, i) => {
                     return {
                         top: this.gridHeight * (i + 1),
@@ -288,7 +293,7 @@ class myChart {
                         nameLocation: "center",
                         gridIndex: i,
                         axisLine: {show: false},
-                        axisLabel: {interval: this.fs - 1},
+                        axisLabel: {interval: this.fs - 1, textStyle: {fontSize: 14},},
                     };
                 }),
                 // Y axis
@@ -303,6 +308,7 @@ class myChart {
                         },
                         axisLabel: {
                             show: false,
+                            textStyle: {fontSize: 14},
                         },
                         gridIndex: i,
                     };
@@ -327,6 +333,7 @@ class myChart {
                 },
                 tooltip: {
                     trigger: "axis",
+                    triggerOn: "none",
                     position: function (pos, params, el, elRect, size) {
                         var obj = {top: 40};
                         obj[["left", "right"][+(pos[0] < size.viewSize[0] / 2)]] = 100;
@@ -379,6 +386,12 @@ class myChart {
             };
             this.chart.setOption(op, {
                 notMerge: true,
+            });
+            this.chart.dispatchAction({
+                type: 'showTip',
+                // 确定需要显示tooltip的系列和数据索引
+                seriesIndex: 0,
+                dataIndex: 400
             });
         } else {
             const errorData = data.data
@@ -476,6 +489,9 @@ class myChart {
         const freqList = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
         if (data.status === 200) {
             const op = {
+                textStyle: {
+                    fontSize: 16 // 这里是你的字体大小
+                },
                 tooltip: {
                     trigger: "axis",
                     position: function (point, params, dom, rect, size) {
@@ -505,7 +521,7 @@ class myChart {
                     // save image to local
                     this._toolbox_image_save(),
                     // button to change graph type
-                    this._toolbox_graph_change(),
+                    // this._toolbox_graph_change(),
                 ],
                 axisPointer: {
                     link: {xAxisIndex: "all"},
@@ -523,6 +539,7 @@ class myChart {
                         top: this.gridHeight * (i + 1),
                         containLabel: this.containLabel,
                         height: this.gridHeight,
+                        left: 100
                     };
                 }),
                 xAxis: freqList.map((e, i) => {
@@ -535,7 +552,8 @@ class myChart {
                         nameGap: 35,
                         gridIndex: i,
                         axisLine: {show: false},
-                        axisLabel: {interval: this.fs - 1},
+                        axisLabel: {interval: this.fs - 1, fontSize: 14},
+
                     };
                 }),
                 yAxis: freqList.map((e, i) => {
@@ -596,6 +614,9 @@ class myChart {
         if (data.status === 200) {
             const maxvalue = data.headers.maxvalue;
             const op = {
+                textStyle: {
+                    fontSize: 16
+                },
                 tooltip: {
                     formatter: (params) => {
                         const value = params.value;
@@ -621,6 +642,9 @@ class myChart {
                         interval: (index, value) => {
                             return value % 1 === 0;
                         },
+                        textStyle: {
+                            fontSize: 14 // 这里是你的字体大小
+                        },
                     },
                 },
                 yAxis: {
@@ -628,17 +652,17 @@ class myChart {
                     name: "Frequency [Hz]",
                     nameLocation: "center",
                     nameGap: 35,
-                    // axisLabel: {
-                    //   interval: (index, value) => {
-                    //     console.log(value);
-                    //     value % 10 === 0;
-                    //   },
-                    // },
+
+                    axisLabel: {
+                        textStyle: {
+                            fontSize: 14
+                        },
+                    },
                 },
                 visualMap: {
                     type: "piecewise",
                     align: "left",
-                    right: 0,
+                    right: 30,
                     bottom: 65,
                     itemWidth: 14,
                     maxOpen: true,
@@ -648,6 +672,8 @@ class myChart {
                     // realtime: false,
                     // splitNumber: 10,
                     precision: 0,
+                    textStyle: {fontSize: 14},
+                    showLabel: false,
                     inRange: {
                         color: [
                             "#313695",

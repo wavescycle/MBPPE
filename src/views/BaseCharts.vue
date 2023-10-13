@@ -141,8 +141,10 @@ export default {
       'timeFreqChart': 'Time_Freq'
     }
     const emptyShow = ref(true)
-    const width = 1000;
-    const height = 600;
+    // const width = 700;
+    // const height = 500;
+    const width = 700;
+    const height = 500;
     let chart;
 
     let placeholder = computed(() =>
