@@ -11,7 +11,18 @@
       </el-table-column>
       <el-table-column label="Action">
         <template #default="scope">
-          <el-button @click="exportAction(scope.$index)" type="primary">Export</el-button>
+          <el-popconfirm
+              confirm-button-text="Numpy"
+              cancel-button-text="Matlab"
+              icon-color="#626AEF"
+              title="Choose export type"
+              @confirm="exportAction(scope.$index,'npy')"
+              @cancel="exportAction(scope.$index,'mat')"
+          >
+            <template #reference>
+              <el-button>Export</el-button>
+            </template>
+          </el-popconfirm>
           <el-popconfirm title="All data type under this file will be deleted!"
                          @confirm="deleteAction(scope.row.filename)">
             <template #reference>
@@ -71,7 +82,7 @@ export default {
         refreshData()
       })
     }
-    const exportAction = (index) => {
+    const exportAction = (index, fileType) => {
       const rowValue = tableData.value[index]
       const typeValue = dataType.value[index]
       const types = typeValue?.split('.')
@@ -85,12 +96,12 @@ export default {
           percent.value[index] = Math.floor(
               (progressEvent.loaded * 100) / progressEvent.total
           );
-        }, preData, channels, false).then((res) => {
+        }, preData, channels, {file_type: fileType}).then((res) => {
           const fileURL = window.URL.createObjectURL(res.data);
           const fileLink = document.createElement("a");
 
           fileLink.href = fileURL;
-          fileLink.setAttribute("download", rowValue.filename + ".npy");
+          fileLink.setAttribute("download", rowValue.filename + `.${fileType}`);
           document.body.appendChild(fileLink);
           fileLink.click();
           progressState.value = false;

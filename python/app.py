@@ -1,4 +1,5 @@
 import json
+from scipy.io import savemat
 from http.client import BAD_REQUEST
 from werkzeug.exceptions import HTTPException, InternalServerError
 from flask import Flask, request, send_file, jsonify, abort, make_response, url_for, current_app
@@ -60,12 +61,16 @@ def allowed_file(filename):
         return False, None
 
 
-def stream_data(data, axis=True, unit=1):
+def stream_data(data, axis=True, unit=1, file_type="npy"):
     if axis:
         xAxis = np.arange(0, data.shape[1]) / unit
         data = np.vstack([xAxis, data])
     bytestream = io.BytesIO()
-    np.save(bytestream, data)
+    if file_type == 'mat':
+        data = {'DATA': data}
+        savemat(bytestream, data)
+    else:
+        np.save(bytestream, data)
     bytestream.seek(0)
     return bytestream
 
@@ -227,8 +232,9 @@ class Data(Resource):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
-
-        return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+        file_type = kwargs['params']['file_type']
+        return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                         mimetype="application/octet-stream")
 
     @init_data()
     def post(self, **kwargs):
@@ -260,8 +266,9 @@ class Reference(Resource):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
-
-        return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+        file_type = kwargs['params']['file_type']
+        return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                         mimetype="application/octet-stream")
 
     @init_data(RefSchema, storage_type='Ref')
     @init_channels('Ref')
@@ -283,8 +290,10 @@ class Resample(Resource):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
+        file_type = kwargs['params']['file_type']
 
-        return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+        return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                         mimetype="application/octet-stream")
 
     @init_data(SampleSchema, storage_type='Sample')
     @init_channels('Sample')
@@ -308,11 +317,12 @@ class Filter(Resource):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
-
+        file_type = kwargs['params']['file_type']
         if is_none:
             abort(BAD_REQUEST, 'You need do filter first')
         else:
-            return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                             mimetype="application/octet-stream")
 
     @init_data(FilterSchema, storage_type='Filter')
     @init_channels('Filter')
@@ -340,11 +350,12 @@ class ICA(Resource):
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
-
+        file_type = kwargs['params']['file_type']
         if is_none:
             abort(BAD_REQUEST, 'You need do ICA first')
         else:
-            return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                             mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_type='ICA')
     def post(self, **kwargs):
@@ -360,11 +371,11 @@ class PSD(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def get(self, **kwargs):
         data, is_none = get_data(feature_ext="PSD", **kwargs)
-
+        file_type = kwargs['params']['file_type']
         if is_none:
             abort(BAD_REQUEST, 'You need do PSD first')
         else:
-            return send_file(stream_data(data, False), mimetype="application/octet-stream")
+            return send_file(stream_data(data, False, file_type=file_type), mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def post(self, **kwargs):
@@ -386,11 +397,12 @@ class DE(Resource):
         data, is_none = get_data(feature_ext="DE", **kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
-
+        file_type = kwargs['params']['file_type']
         if is_none:
             abort(BAD_REQUEST, 'You need do DE first')
         else:
-            return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+            return send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                             mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
     def post(self, **kwargs):
@@ -413,6 +425,7 @@ class Frequency(Resource):
         data, is_none = get_data(feature_ext="Freq", **kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
+        file_type = kwargs['params']['file_type']
         if need_axis and len(data.shape) > 2:
             data = data[0]
 
@@ -422,7 +435,8 @@ class Frequency(Resource):
             band_list = kwargs['info']['band_list']
 
             response = make_response(
-                send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream"))
+                send_file(stream_data(data, need_axis, sample_rate, file_type=file_type),
+                          mimetype="application/octet-stream"))
             response.headers['BandList'] = json.dumps(band_list)
             response.headers['Access-Control-Expose-Headers'] = 'BandList'
             return response
@@ -457,6 +471,7 @@ class TimeFrequency(Resource):
         info = kwargs['info']
         params = kwargs['params']
         need_axis = params['need_axis']
+        file_type = params['file_type']
         start = params['start']
         end = params['end']
         fs = info['sample_rate']
@@ -475,7 +490,8 @@ class TimeFrequency(Resource):
             max_value = None
 
         response = make_response(
-            send_file(stream_data(data_fragment, need_axis, fs), mimetype="application/octet-stream"))
+            send_file(stream_data(data_fragment, need_axis, fs, file_type=file_type),
+                      mimetype="application/octet-stream"))
 
         if max_value is not None:
             response.headers['MaxValue'] = max_value
@@ -566,7 +582,9 @@ class Task(Resource):
         if filename is None:
             return jsonify({key: value for key, value in task.items() if key != 'data'})
 
-        return send_file(stream_data(task['data'][filename], False), mimetype="application/octet-stream")
+        file_type = request.args.get("file_type")
+        return send_file(stream_data(task['data'][filename], False, file_type=file_type),
+                         mimetype="application/octet-stream")
 
     @async_api
     def post(self):

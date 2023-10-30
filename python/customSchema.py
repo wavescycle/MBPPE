@@ -5,6 +5,7 @@ from marshmallow.validate import OneOf
 class BaseSchema(Schema):
     pre_data = fields.String(data_key="pre_data", missing='Raw')
     need_axis = fields.Boolean(data_key="need_axis", missing=False)
+    file_type = fields.String(data_key="file_type", missing='npy')
 
     @pre_load
     def preload(self, value, **kwargs):

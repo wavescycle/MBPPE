@@ -256,7 +256,18 @@
             </el-table-column>
           </el-table>
           <div style="margin-top: 20px">
-            <el-button @click="download(drawerTitle)">Export</el-button>
+            <el-popconfirm
+                confirm-button-text="Numpy"
+                cancel-button-text="Matlab"
+                icon-color="#626AEF"
+                title="Choose export type"
+                @confirm="download(drawerTitle,'npy')"
+                @cancel="download(drawerTitle,'mat')"
+            >
+              <template #reference>
+                <el-button>Export</el-button>
+              </template>
+            </el-popconfirm>
             <el-button @click="clear()">Clear</el-button>
             <el-popconfirm title="Delete all task Data?" @confirm="removeSpecialTask(drawerTitle)">
               <template #reference>
@@ -345,12 +356,12 @@ export default {
         fileList.value = resp.data
       })
     }
-    const download = (taskId) => {
+    const download = (taskId, fileType) => {
       let select = multipleTableRef.value.getSelectionRows()
       for (let s of select) {
         const filename = s.filename
         const index = tableData.value.findIndex(e => e.filename === filename)
-        getTaskData(taskId, filename, (progressEvent) => {
+        getTaskData(taskId, filename, fileType, (progressEvent) => {
           taskDataExportProgress.value[index] = Math.floor(
               (progressEvent.loaded * 100) / progressEvent.total
           );
@@ -359,7 +370,7 @@ export default {
           const fileLink = document.createElement("a");
 
           fileLink.href = fileURL;
-          fileLink.setAttribute("download", filename + ".npy");
+          fileLink.setAttribute("download", filename + `.${fileType}`);
           document.body.appendChild(fileLink);
           fileLink.click();
         });

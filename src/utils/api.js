@@ -210,8 +210,9 @@ async function getAllTaskStatus() {
     return await getTaskStatus()
 }
 
-async function getTaskData(task_id, filename, onDownloadProgress) {
-    return await req.get(`/task/${task_id}/${filename}`, {
+async function getTaskData(taskId, filename, fileType, onDownloadProgress) {
+    return await req.get(`/task/${taskId}/${filename}`, {
+        params: {file_type: fileType},
         onDownloadProgress: onDownloadProgress,
         responseType: "blob",
     });
