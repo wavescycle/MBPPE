@@ -1,3 +1,4 @@
+import json
 from http.client import BAD_REQUEST
 from werkzeug.exceptions import HTTPException, InternalServerError
 from flask import Flask, request, send_file, jsonify, abort, make_response, url_for, current_app
@@ -418,7 +419,13 @@ class Frequency(Resource):
         if is_none:
             abort(BAD_REQUEST, 'You need do Frequency first')
         else:
-            return send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream")
+            band_list = kwargs['info']['band_list']
+
+            response = make_response(
+                send_file(stream_data(data, need_axis, sample_rate), mimetype="application/octet-stream"))
+            response.headers['BandList'] = json.dumps(band_list)
+            response.headers['Access-Control-Expose-Headers'] = 'BandList'
+            return response
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     @init_channels('Freq')
@@ -430,9 +437,14 @@ class Frequency(Resource):
         storage_type = kwargs['modify_storage_type']
 
         channels = params['channels']
+        band_list = params['band_list']
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['Freq'] = frequency(raw, channels, fs=freq)
+        if band_list is None:
+            info['band_list'] = ['Delta', 'Theta', 'Alpha', 'Beta', 'Gamma']
+        else:
+            info['band_list'] = [item['name'] for item in json.loads(band_list.replace('\'', "\""))]
+        storage[storage_type]['Freq'] = frequency(raw, channels, fs=freq, iter_freq=band_list)
         return 'OK'
 
 

@@ -35,6 +35,7 @@ class BasicSchema(BaseSchema):
     channels = fields.List(fields.Int, data_key="channels", missing=[])
     start = fields.Int(data_key="start", missing=None)
     end = fields.Int(data_key="end", missing=None)
+    band_list = fields.String(data_key="band_list", missing=None)
 
 
 class RefSchema(BaseSchema):
@@ -68,3 +69,7 @@ class AsyncFilterSchema(Schema):
 class AsyncRefSchema(Schema):
     mode = fields.Str(data_key="mode", missing="average")
     ref_ch = fields.List(fields.Int, data_key="refChannels", missing=[])
+
+
+class AsyncFreqSchema(Schema):
+    band_list = fields.String(data_key="band_list", missing=None)

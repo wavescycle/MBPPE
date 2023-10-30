@@ -36,6 +36,15 @@
           ></el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="BandList" prop="BandList" v-if="form.method==='Frequency'">
+        <el-input
+            style="width: 300px"
+            v-model="form.bandList"
+            :rows="2"
+            type="textarea"
+            placeholder='[{"name":"Delta","fmin":1,"fmax":4},{"name":"Theta","fmin":4,"fmax":8},{"name":"Alpha","fmin":8,"fmax":13},{"name":"Beta","fmin":13,"fmax":31},{"name":"Gamma","fmin":31,"fmax":50}]'
+        />
+      </el-form-item>
       <el-form-item label="PreData" prop="preData">
         <el-select
             v-model="form.preData"
@@ -77,6 +86,7 @@ export default {
       fileList: [],
       preData: "",
       channels: [],
+      bandList: "",
       preDataList: []
     });
 
@@ -117,7 +127,7 @@ export default {
               res = await postDE(form.name, form.preData);
               break;
             case "Frequency":
-              res = await postFrequency(form.name, form.channels, form.preData)
+              res = await postFrequency(form.name, form.channels, form.preData, {band_list: form.bandList})
               break;
             case "TimeFrequency":
               res = await postTimeFrequency(form.name, form.channels, form.preData)

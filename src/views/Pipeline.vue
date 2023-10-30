@@ -90,7 +90,7 @@
           </template>
           <template v-if="currentTaskIndex>0">
             <el-form ref="taskStepRef" :model="taskStepInfo" label-width="150px">
-              <el-tabs v-model="taskTabRef" class="demo-tabs" type="card" stretch>
+              <el-tabs v-model="taskTabRef" type="card" stretch>
                 <el-tab-pane label="Pre-Process" name="pre-process">
                   <el-form-item label="Method" prop="method" required>
                     <el-radio-group v-model="taskStepInfo.method">
@@ -200,6 +200,15 @@
                       <el-radio-button label="Freq">Freq</el-radio-button>
                       <el-radio-button label="Time_Freq">TimeFreq</el-radio-button>
                     </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="BandList" prop="BandList" v-if="taskStepInfo.method==='Freq'">
+                    <el-input
+                        style="width: 300px"
+                        v-model="taskStepInfo.info.band_list"
+                        :rows="2"
+                        type="textarea"
+                        placeholder='[{"name":"Delta","fmin":1,"fmax":4},{"name":"Theta","fmin":4,"fmax":8},{"name":"Alpha","fmin":8,"fmax":13},{"name":"Beta","fmin":13,"fmax":31},{"name":"Gamma","fmin":31,"fmax":50}]'
+                    />
                   </el-form-item>
                 </el-tab-pane>
               </el-tabs>

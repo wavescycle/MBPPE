@@ -3,7 +3,7 @@ from copy import deepcopy
 from process import fir_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
 import traceback
 from marshmallow import EXCLUDE
-from customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema
+from customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema, AsyncFreqSchema
 
 
 # from app import DATA_STORAGE
@@ -146,7 +146,8 @@ def async_de(data, info, **kwargs):
 
 def async_freq(data, info, **kwargs):
     freq = kwargs['sample_rate']
-    return frequency(data, None, fs=freq)
+    info = AsyncFreqSchema(unknown=EXCLUDE).load(info)
+    return frequency(data, None, fs=freq, iter_freq=info.get('band_list'))
 
 
 def async_time_freq(data, info, **kwargs):

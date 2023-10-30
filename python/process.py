@@ -1,3 +1,4 @@
+import json
 from scipy.signal import welch, windows, resample_poly, firwin, lfilter
 from scipy.fft import rfft, rfftfreq
 from sklearn.decomposition import FastICA
@@ -66,36 +67,40 @@ def de(data, fs=200, win=200):
     return deArray
 
 
-def frequency(data, channel, fs=200, wavename='db4', maxlevel=8):
+def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None):
     all_data = []
     freq_band = fs / (2 ** maxlevel)
-    iter_freq = [
-        {
-            'name': 'Delta',
-            'fmin': 1,
-            'fmax': 4
-        },
-        {
-            'name': 'Theta',
-            'fmin': 4,
-            'fmax': 8
-        },
-        {
-            'name': 'Alpha',
-            'fmin': 8,
-            'fmax': 13
-        },
-        {
-            'name': 'Beta',
-            'fmin': 13,
-            'fmax': 31
-        },
-        {
-            'name': 'Gamma',
-            'fmin': 31,
-            'fmax': 50
-        },
-    ]
+    if isinstance(iter_freq, str):
+        iter_freq = json.loads(iter_freq.replace('\'', "\""))
+    else:
+        iter_freq = [
+            {
+                'name': 'Delta',
+                'fmin': 1,
+                'fmax': 4
+            },
+            {
+                'name': 'Theta',
+                'fmin': 4,
+                'fmax': 8
+            },
+            {
+                'name': 'Alpha',
+                'fmin': 8,
+                'fmax': 13
+            },
+            {
+                'name': 'Beta',
+                'fmin': 13,
+                'fmax': 31
+            },
+            {
+                'name': 'Gamma',
+                'fmin': 31,
+                'fmax': 50
+            },
+        ]
+    print(iter_freq)
 
     if channel is None:
         channel = range(data.shape[0])

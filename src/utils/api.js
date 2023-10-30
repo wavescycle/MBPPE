@@ -156,11 +156,12 @@ async function getFrequency(filename, channels, pre_data = "", config = {}) {
     return decodeArrayBuffer(res);
 }
 
-async function postFrequency(filename, channels, pre_data = "") {
-    return await req.post(`/frequency/${filename}`, {
+async function postFrequency(filename, channels, pre_data = "", config = {}) {
+    return await req.post(`/frequency/${filename}`, delEmptyItems({
         pre_data: pre_data,
         channels: channels,
-    });
+        ...config
+    }));
 }
 
 async function getTimeFrequency(filename, channels, pre_data = "", config = {}) {

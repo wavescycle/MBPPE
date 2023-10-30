@@ -486,16 +486,15 @@ class myChart {
         this.end = end;
         const colors = ["#83be82", "#e99c9d", "#6f6fe3", "#f18ef1", "#dc855f"]
         let data = await getFrequency(filename, channels, preData, {need_axis: true});
-        const freqList = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
         if (data.status === 200) {
+            const freqList = JSON.parse(data.headers.bandlist)
             const op = {
                 textStyle: {
-                    fontSize: 16 // 这里是你的字体大小
+                    fontSize: 16
                 },
                 tooltip: {
                     trigger: "axis",
                     position: function (point, params, dom, rect, size) {
-                        // 返回 [x, y] 坐标的数组，这里你可以根据图表的大小返回一个固定的坐标值
                         return [size.viewSize[0] - 90, point[1]];
                     },
                     formatter: function (params) {
@@ -643,7 +642,7 @@ class myChart {
                             return value % 1 === 0;
                         },
                         textStyle: {
-                            fontSize: 14 // 这里是你的字体大小
+                            fontSize: 14
                         },
                     },
                 },
