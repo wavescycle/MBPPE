@@ -41,7 +41,7 @@ python ./python/app.py
 > The first time you run `npm run dev`, a blank page may appear. This is because the program startup speed is faster
 > than the page load time. You can resolve this issue by running the command again.
 
-## User guide
+## User Guide
 
 ![dashboard](./demo/dashboard.png)
 
@@ -55,7 +55,7 @@ Users can select modules according to their own needs.
 6. Pipeline: Used for creating batch task sequences for multiple tasks.
 7. Plugin: Plugin methods, used for users to upload custom methods to meet more complex scenarios.
 
-## Plugin introduction
+## Plugin Introduction (**NEW**)
 
 You can write custom plugins as needed to suit complex processing scenarios.
 
