@@ -1,13 +1,16 @@
 def reader(data, params, **kwargs):
-    print("Reader")
-    return [[1, 2, 3]]
+    print("reader")
+    # do some modify
+    return data
 
 
 def process(data, params, **kwargs):
     print("process")
-    return [[1, 2, 3]]
+    # do some modify
+    return data
 
 
 def extract(data, params, **kwargs):
     print("feature")
-    return [[1, 2, 3]]
+    # do some modify
+    return data
