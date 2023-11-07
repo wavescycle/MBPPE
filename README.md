@@ -6,14 +6,14 @@ flexibility of personal offline usage or private deployment.
 
 ## Quick Start
 
-0. Test ENV
+1. Init env
 
 During development, I used Node.js > 16.5 and Python 3.11.4 as the base environment. You can download Nodejs from the
 following [link](https://nodejs.org/en).
 
-> You may need restart compute to update Node Env.
+> You may need restart compute to update Node env.
 
-1. Install dependencies
+2. Install dependencies
 
 ```
 cd MBPPE
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 npm i
 ```
 
-2. Start APP
+3. Start APP
 
 You can choose one of the following two methods to run the code.
 
@@ -41,6 +41,51 @@ python ./python/app.py
 > The first time you run `npm run dev`, a blank page may appear. This is because the program startup speed is faster
 > than the page load time. You can resolve this issue by running the command again.
 
+## Project Structure
+
+The following is the primary structure of MBPPE, which may assist in enhancing your understanding of the code.
+
+```
+|   index.html  # Main structure of HTML
+|   main.js  # Primary process file for electron handling system-related tasks
+|   preload.js # Loads python server prior to app rendering, utilized for Offline Mode
+|   
++---python # Server Code
+|   |   app.py   # Main file of the Flask application [router adapter]
+|   |   customSchema.py  # Custom schema for managing request parameters
+|   |   load.py  # Default methods for loading EEG files
+|   |   plugin.py  # Manager Plugin file uploaded by user
+|   |   process.py  # Inbuilt methods for processing/extracting EEG data
+|   |   utils.py  # Utility function library, used in the pipeline
+|   |   
+|   +---plugins
+|           demo.py # Example of a plugin
+|        
+|           
+\---src # Client Code
+    |     
+    +---config
+    |       config.json # Configuration file for custom server and specified EEG data for processing
+    |       
+    |       
+    +---utils # Client utilities
+    |       api.js # Functions for backend interface calls [interface Driver]
+    |       charts.js # Functions for chart generation
+    |       npy.js # Script to convert numpy data to JavaScript array
+    |       request.js # Functions for network requests
+    |       
+    \---views # UI of Client
+            BaseCharts.vue # Visualization
+            Dashboard.vue # Dashboard 
+            Feature.vue # Feature extraction
+            Home.vue
+            Pipeline.vue # Pipeline
+            Plugin.vue # Plugin 
+            PreProcess.vue # Pre-processing
+            Upload.vue  # Upload EEG data
+            
+```
+
 ## User Guide
 
 ![dashboard](./demo/dashboard.png)
@@ -49,10 +94,10 @@ Users can select modules according to their own needs.
 
 1. Dashboard: Used to display the data information that has been processed in the current system.
 2. Data Upload: Users can upload EEG data files in batches.
-3. Pre Process: Preprocessing methods.
-4. Analyse: Feature extraction methods.
+3. Pre Process: Preprocess EEG signals in a synchronous manner.
+4. Analyse: Extract features from EEG signals in a synchronous manner.
 5. Visualisation: Used for data visualization.
-6. Pipeline: Used for creating batch task sequences for multiple tasks.
+6. Pipeline: Used for creating and monitoring batch task sequences for multiple tasks
 7. Plugin: Plugin methods, used for users to upload custom methods to meet more complex scenarios.
 
 ## Plugin Introduction (**NEW**)
