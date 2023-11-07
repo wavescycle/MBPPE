@@ -22,6 +22,7 @@
           <el-radio-button label="ICA"/>
           <el-radio-button label="Reference"/>
           <el-radio-button label="Resample"/>
+          <el-radio-button label="Plugin"/>
         </el-radio-group>
       </el-form-item>
       <el-form-item
@@ -68,6 +69,17 @@
               min="0"
           />
         </el-col>
+      </el-form-item>
+      <el-form-item label="Plugin" v-if="form.process==='Plugin'" prop="plugin" required>
+        <el-select v-model="form.plugin">
+          <el-option
+              v-for="(item, i) of pluginList"
+              :key="i"
+              :label="item"
+              :value="item"
+          >
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="PreData" prop="preData">
         <el-select
@@ -141,6 +153,14 @@
             style="width: 220px"
         />
       </el-form-item>
+      <el-form-item label="Params" v-if="form.process==='Plugin'" prop="pluginParams">
+        <el-input
+            style="width: 300px"
+            v-model="form.pluginParams"
+            :rows="2"
+            type="textarea"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
         <el-button @click="onReset">Reset</el-button>
@@ -152,7 +172,16 @@
 <script>
 import {reactive, ref, computed, onMounted, watch} from "vue";
 import {ElMessage, ElLoading} from "element-plus";
-import {getFileList, postFilter, postICA, getPreData, postReference, postResample} from "../utils/api";
+import {
+  getFileList,
+  postFilter,
+  postICA,
+  getPreData,
+  postReference,
+  postResample,
+  getPlugin,
+  postPluginHandler
+} from "../utils/api";
 import {CH_NAMES} from "../config/config.json";
 
 export default {
@@ -181,8 +210,12 @@ export default {
       preDataList: [],
       refMode: "average",
       refChannels: [],
-      fs: null
+      fs: null,
+      plugin: "",
+      pluginParams: ""
     });
+    const pluginList = ref([])
+
 
     const label = computed(() => {
       let labels = {
@@ -235,6 +268,12 @@ export default {
             res = await postReference(name, channels, form.preData, {mode: form.refMode, ref_ch: refCh})
           } else if (process === "Resample") {
             res = await postResample(name, form.preData, {new_fs: form.fs})
+          } else if (process === "Plugin") {
+            res = await postPluginHandler(name, channels, form.preData, {
+              plugin: form.plugin,
+              plugin_type: "Pre_Process",
+              plugin_params: form.pluginParams
+            })
           }
           loading.close();
           if (res.status === 200) ElMessage.success("success");
@@ -253,6 +292,9 @@ export default {
       getFileList().then((res) => {
         form.fileList = res.data;
       });
+      getPlugin().then(res => {
+        pluginList.value = res.data
+      })
     })
     return {
       rules,
@@ -266,7 +308,8 @@ export default {
       onSubmit,
       onReset,
       getPreDataList,
-      refMode
+      refMode,
+      pluginList
     };
   },
 };

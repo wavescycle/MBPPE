@@ -40,6 +40,26 @@
           style="width: 250px"
       />
     </el-form-item>
+    <div class="content-title">Plugin</div>
+    <el-form-item prop="plugin">
+      <el-select v-model="plugin" clearable placeholder="Select">
+        <el-option
+            v-for="(item, index) in pluginList"
+            :key="index"
+            :label="item"
+            :value="item"
+        />
+      </el-select>
+    </el-form-item>
+    <div class="content-title" v-if="plugin.length>0">Plugin Params</div>
+    <el-form-item v-if="plugin.length>0">
+      <el-input
+          style="width: 300px"
+          v-model="pluginParams"
+          :rows="2"
+          type="textarea"
+      />
+    </el-form-item>
     <el-form-item>
       <el-button type="primary" @click="onSubmit">Submit</el-button>
       <el-button @click="onReset">Reset</el-button>
@@ -48,15 +68,18 @@
 </template>
 
 <script>
-import {ref} from "vue";
+import {ref, onMounted, reactive} from "vue";
 import {ElNotification} from "element-plus";
-import {postData} from "../utils/api";
+import {postData, getPlugin} from "../utils/api";
 
 export default {
   setup() {
     const freq = ref(null);
     const upload = ref(null);
     const mode = ref("truncate")
+    const plugin = ref("")
+    const pluginList = ref([])
+    const pluginParams = ref("")
     const padMode = ["constant", "edge", "linear_ramp", "maximum", "mean", "median", "minimum", "reflect", "symmetric", "wrap", "empty"]
     const treeData = [
       {
@@ -87,6 +110,8 @@ export default {
       formData.append("file", file);
       formData.append("freq", freq.value || 200);
       formData.append("format", mode.value);
+      formData.append("plugin", plugin.value);
+      formData.append("plugin_params", pluginParams.value)
       let res = await postData(filename, formData, (progressEvent) => {
         params.onProgress({
           percent: Math.floor(
@@ -110,7 +135,12 @@ export default {
       }
     }
 
-    return {freq, uploadFile, upload, onSubmit, onReset, mode, treeData};
+    onMounted(() => {
+      getPlugin().then(res => {
+        pluginList.value = res.data
+      })
+    })
+    return {freq, uploadFile, upload, onSubmit, onReset, mode, treeData, plugin, pluginList, pluginParams};
   },
 };
 </script>
@@ -123,4 +153,20 @@ export default {
   font-size: 25px;
   color: #1f2f3d;
 }
+
+.el-upload__text {
+  background-color: #fff;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  box-sizing: border-box;
+  width: 360px;
+  height: 180px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+</style>
+<style>
+
 </style>

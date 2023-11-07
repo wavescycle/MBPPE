@@ -18,9 +18,10 @@
           <el-radio-button label="DE"/>
           <el-radio-button label="Frequency"/>
           <el-radio-button label="TimeFrequency"/>
+          <el-radio-button label="Plugin"/>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="Channels" prop="channels" v-if="form.method.includes('Frequency')">
+      <el-form-item label="Channels" prop="channels" v-if="form.method.includes('Frequency') ||form.method==='Plugin' ">
         <el-select
             v-model="form.channels"
             multiple
@@ -60,6 +61,25 @@
           </el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="Plugin" v-if="form.method==='Plugin'" prop="plugin" required>
+        <el-select v-model="form.plugin">
+          <el-option
+              v-for="(item, i) of pluginList"
+              :key="i"
+              :label="item"
+              :value="item"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="Params" v-if="form.method==='Plugin'" prop="pluginParams">
+        <el-input
+            style="width: 300px"
+            v-model="form.pluginParams"
+            :rows="2"
+            type="textarea"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
         <el-button @click="onReset">Reset</el-button>
@@ -70,7 +90,16 @@
 
 <script>
 import {reactive, ref, computed, onMounted} from "vue";
-import {getFileList, postPSD, postDE, getPreData, postFrequency, postTimeFrequency} from "../utils/api";
+import {
+  getFileList,
+  postPSD,
+  postDE,
+  getPreData,
+  postFrequency,
+  postTimeFrequency,
+  getPlugin,
+  postPluginHandler
+} from "../utils/api";
 import {ElMessage, ElLoading} from "element-plus";
 import {CH_NAMES} from "../config/config.json"
 
@@ -87,8 +116,11 @@ export default {
       preData: "",
       channels: [],
       bandList: "",
-      preDataList: []
+      preDataList: [],
+      plugin: "",
+      pluginParams: ""
     });
+    const pluginList = ref([])
 
     const rules = {
       name: {required: true, message: "Select a file", trigger: "blur"},
@@ -132,6 +164,12 @@ export default {
             case "TimeFrequency":
               res = await postTimeFrequency(form.name, form.channels, form.preData)
               break
+            case "Plugin":
+              res = await postPluginHandler(form.name, form.channels, form.preData, {
+                plugin: form.plugin,
+                plugin_type: "Feature_Ext",
+                plugin_params: form.pluginParams
+              })
           }
 
           loading.close();
@@ -150,6 +188,9 @@ export default {
       getFileList().then((res) => {
         form.fileList = res.data;
       });
+      getPlugin().then(res => {
+        pluginList.value = res.data
+      })
     })
     return {
       formRef,
@@ -161,7 +202,8 @@ export default {
       onReset,
       loading,
       CH_NAMES,
-      getPreDataList
+      getPreDataList,
+      pluginList
     };
   },
 };

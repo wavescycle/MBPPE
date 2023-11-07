@@ -179,10 +179,10 @@ async function postTimeFrequency(filename, channels, pre_data = "") {
     });
 }
 
-async function download(type, filename, onDownloadProgress, pre_data = "", channels, config = {}) {
+async function download(type, filename, onDownloadProgress, pre_data = "", config = {}) {
     return await req.get(`/${type}/${filename}`, {
         params: delEmptyItems({
-            channels: channels,
+            // channels: channels,
             pre_data: pre_data,
             ...config
         }),
@@ -266,6 +266,23 @@ async function postResample(filename, pre_data, config = {}) {
     })
 }
 
+async function getPlugin() {
+    return await req.get('/plugin')
+}
+
+async function delPlugin(plugin) {
+    return await req.delete(`/plugin/${plugin}`)
+}
+
+
+async function postPluginHandler(filename, channels, pre_data, config = {},) {
+    return await req.post(`/pluginhandler/${config.plugin}/${filename}`, {
+        channels: channels,
+        pre_data: pre_data,
+        ...config
+    })
+}
+
 export {
     checkStatus,
     getData,
@@ -295,5 +312,8 @@ export {
     getReference,
     postReference,
     getResample,
-    postResample
+    postResample,
+    getPlugin,
+    postPluginHandler,
+    delPlugin
 };

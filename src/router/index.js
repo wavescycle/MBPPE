@@ -64,7 +64,16 @@ const routes = [
                 },
                 component: () =>
                     import(/* webpackChunkName: "dashboard" */ "../views/Pipeline.vue"),
-            }
+            }, {
+                path: "/plugin",
+                name: "plugin",
+                meta: {
+                    title: "Plugin",
+                },
+                component: () =>
+                    import(/* webpackChunkName: "dashboard" */ "../views/Plugin.vue"),
+            },
+
         ],
     },
 ];

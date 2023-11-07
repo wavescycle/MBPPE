@@ -98,6 +98,7 @@
                       <el-radio-button label="ICA"/>
                       <el-radio-button label="Reference"/>
                       <el-radio-button label="Resample"/>
+                      <el-radio-button label="Plugin"/>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item
@@ -191,6 +192,32 @@
                         style="width: 220px"
                     />
                   </el-form-item>
+                  <el-form-item label="Plugin"
+                                v-if="taskStepInfo.method==='Plugin'"
+                                prop="info.plugin"
+                                required
+                  >
+                    <el-select v-model="taskStepInfo.info.plugin">
+                      <el-option
+                          v-for="(item, i) of pluginList"
+                          :key="i"
+                          :label="item"
+                          :value="`Pre_Process$${item}`"
+                      >
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="Plugin Params"
+                                v-if="taskStepInfo.method==='Plugin'"
+                                prop="info.pluginParams"
+                  >
+                    <el-input
+                        style="width: 300px"
+                        v-model="taskStepInfo.info.pluginParams"
+                        :rows="2"
+                        type="textarea"
+                    />
+                  </el-form-item>
                 </el-tab-pane>
                 <el-tab-pane label="Feature Ext" name="feature-ext">
                   <el-form-item label="Method" prop="method" required>
@@ -199,6 +226,8 @@
                       <el-radio-button label="DE"/>
                       <el-radio-button label="Freq">Freq</el-radio-button>
                       <el-radio-button label="Time_Freq">TimeFreq</el-radio-button>
+                      <el-radio-button label="Plugin">Plugin</el-radio-button>
+
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="BandList" prop="BandList" v-if="taskStepInfo.method==='Freq'">
@@ -208,6 +237,32 @@
                         :rows="2"
                         type="textarea"
                         placeholder='[{"name":"Delta","fmin":1,"fmax":4},{"name":"Theta","fmin":4,"fmax":8},{"name":"Alpha","fmin":8,"fmax":13},{"name":"Beta","fmin":13,"fmax":31},{"name":"Gamma","fmin":31,"fmax":50}]'
+                    />
+                  </el-form-item>
+                  <el-form-item label="Plugin"
+                                v-if="taskStepInfo.method==='Plugin'"
+                                prop="info.plugin"
+                                required
+                  >
+                    <el-select v-model="taskStepInfo.info.plugin">
+                      <el-option
+                          v-for="(item, i) of pluginList"
+                          :key="i"
+                          :label="item"
+                          :value="`Feature_Ext$${item}`"
+                      >
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="Plugin Params"
+                                v-if="taskStepInfo.method==='Plugin'"
+                                prop="info.pluginParams"
+                  >
+                    <el-input
+                        style="width: 300px"
+                        v-model="taskStepInfo.info.pluginParams"
+                        :rows="2"
+                        type="textarea"
                     />
                   </el-form-item>
                 </el-tab-pane>
@@ -304,7 +359,7 @@
 <script>
 import {ref, reactive, computed, onMounted} from 'vue'
 import {ElTable} from 'element-plus'
-import {getAllTaskStatus, getTaskStatus, postTask, getFileList, deleteTask, getTaskData} from "../utils/api";
+import {getAllTaskStatus, getTaskStatus, postTask, getFileList, deleteTask, getTaskData, getPlugin} from "../utils/api";
 import {CH_NAMES} from "../config/config.json";
 
 export default {
@@ -336,6 +391,7 @@ export default {
         }
     )
     const taskDataExportProgress = ref([])
+    const pluginList = ref([])
     const tagStatusTypes = {
       'SUCCESS': 'success',
       'ERROR': 'danger',
@@ -540,9 +596,11 @@ export default {
     const addTaskToData = () => {
       taskAddData.tasks.push(JSON.parse(JSON.stringify({seq: currentTaskIndex.value, task: taskStepInfo})))
     }
-
     onMounted(() => {
       refreshTasks()
+      getPlugin().then(res => {
+        pluginList.value = res.data
+      })
     });
 
     const switchTab = () => {
@@ -589,7 +647,8 @@ export default {
       specialTaskInfo,
       removeSpecialTask,
       taskDataExportProgress,
-      refMode
+      refMode,
+      pluginList,
     }
   }
 }

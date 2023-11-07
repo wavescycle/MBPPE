@@ -3,7 +3,8 @@ from copy import deepcopy
 from process import fir_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
 import traceback
 from marshmallow import EXCLUDE
-from customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema, AsyncFreqSchema
+from customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema, AsyncFreqSchema, AsyncPluginSchema
+from plugin import PM
 
 
 # from app import DATA_STORAGE
@@ -21,6 +22,9 @@ def get_data(feature_ext=None, **kwargs):
     storage_type = kwargs['modify_storage_type']
     params = kwargs['params']
     channels = params['channels']
+    storage_path = params['storage_path']
+    if storage_path == 'Feature_Ext':
+        feature_ext = params.get('feature_ext', None)
     data = storage[storage_type]
 
     if feature_ext is not None:
@@ -164,3 +168,13 @@ def async_reference(data, info, **kwargs):
 def async_resample(data, info, **kwargs):
     info = SampleSchema(unknown=EXCLUDE).load(info)
     return resample(data, kwargs['sample_rate'], info['new_fs'])
+
+
+def async_plugin(data, info, **kwargs):
+    info = AsyncPluginSchema(unknown=EXCLUDE).load(info)
+    plugin_type, plugin = info['plugin'].split('$')
+    plugin_params = info['plugin_params']
+    if plugin_type == 'Feature_Ext':
+        return PM.get_plugin(plugin).extract(data, plugin_params, **kwargs)
+    elif plugin_type == 'Pre_Process':
+        return PM.get_plugin(plugin).process(data, plugin_params, **kwargs)

@@ -92,7 +92,11 @@ export default {
         icon: "help",
         index: "/pipeline",
         title: "Pipeline",
-      },
+      }, {
+        icon: "DocumentAdd",
+        index: "/plugin",
+        title: "Plugin",
+      }
     ];
 
     const route = useRoute();

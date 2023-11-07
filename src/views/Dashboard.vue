@@ -87,16 +87,15 @@ export default {
       const typeValue = dataType.value[index]
       const types = typeValue?.split('.')
       if (types?.length > 1) {
-        const channels = CH_NAMES.map((e, i) => i);
         const method = types[0]
         const preData = types[1]
-        const type = method === "Pre_Process" ? "data" : method.toLowerCase()
+        const type = method === "Pre_Process" ? method : "Feature_Ext"
 
-        download(type, rowValue.filename, (progressEvent) => {
+        download("data", rowValue.filename, (progressEvent) => {
           percent.value[index] = Math.floor(
               (progressEvent.loaded * 100) / progressEvent.total
           );
-        }, preData, channels, {file_type: fileType}).then((res) => {
+        }, preData, {file_type: fileType, storage_path: type, Feature_Ext: method}).then((res) => {
           const fileURL = window.URL.createObjectURL(res.data);
           const fileLink = document.createElement("a");
 

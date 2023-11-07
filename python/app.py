@@ -7,7 +7,7 @@ from flask_restful import Resource, Api
 from flask_cors import CORS
 from marshmallow import ValidationError, EXCLUDE, Schema
 from process import fir_filter, power_spectrum, de, time_frequency, frequency, ica, re_reference, resample
-from customSchema import DataSchema, FilterSchema, BasicSchema, RefSchema, SampleSchema
+from customSchema import DataSchema, FilterSchema, BasicSchema, RefSchema, SampleSchema, PluginSchema
 from utils import get_data
 from functools import wraps
 from datetime import datetime
@@ -19,6 +19,10 @@ import threading
 import io
 import load
 import copy
+import os
+import sys
+from plugin import PM
+import importlib
 from enum import Enum
 
 app = Flask(__name__)
@@ -47,6 +51,7 @@ DATA_STORAGE_TEMPLATE = {
 }
 DATA_STORAGE = dict()
 ALLOWED_EXTENSIONS = {'mat', 'npz', 'xlsx'}
+TASKS = {}
 
 
 def transform_data(raw, file_type, format_mode):
@@ -78,6 +83,7 @@ def stream_data(data, axis=True, unit=1, file_type="npy"):
 def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', source_path='Pre_Process'):
     def decorator(fuc):
         def wrapper(*args, **kwargs):
+            nonlocal storage_path, storage_type, source_path
             if request.method == 'GET':
                 params = request.args
             else:
@@ -93,12 +99,19 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 
             if params:
                 pre_data = params.get('pre_data', 'Raw')
+                storage_path = params.get('storage_path', storage_path)
+
             else:
                 pre_data = 'Raw'
 
             info = DATA_STORAGE[filename]['Info']
             storage = DATA_STORAGE[filename][storage_path]
             source = DATA_STORAGE[filename][source_path]
+
+            if storage_type == 'Plugin':
+                storage_path = params['plugin_type']
+                storage_type = kwargs['plugin']
+                storage = DATA_STORAGE[filename][storage_path]
 
             modify_source_type = modify_storage_type = pre_data
 
@@ -115,9 +128,9 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 
             source.setdefault(modify_source_type, None)
 
-            return fuc(*args, filename=filename, info=info, storage=storage, modify_storage_type=modify_storage_type,
+            return fuc(*args, info=info, storage=storage, modify_storage_type=modify_storage_type,
                        source=source[modify_source_type],
-                       params=params)
+                       params=params, **kwargs)
 
         return wrapper
 
@@ -127,10 +140,13 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 def init_channels(method):
     def decorator(func):
         def wrapper(*args, **kwargs):
+            nonlocal method
             params = kwargs['params']
             filename = kwargs['filename']
             channels = params.get("channels")
             channel_path = DATA_STORAGE[filename]['Channels']
+            if method == 'Plugin':
+                method = kwargs['plugin']
 
             if request.method == 'POST' and channels is not None:
                 storage_type = kwargs.get('modify_storage_type', 'Raw')
@@ -240,6 +256,7 @@ class Data(Resource):
     def post(self, **kwargs):
         freq = request.form['freq']
         format_mode = request.form['format']
+        plugin = request.form['plugin']
         file = request.files['file']
         filename = kwargs['filename']
         storage = kwargs['storage']
@@ -248,7 +265,11 @@ class Data(Resource):
         is_allowed, file_type = allowed_file(filename)
         if file and is_allowed:
             # read file use stream
-            storage[storage_type] = transform_data(file.stream, file_type, format_mode)
+            if plugin:
+                params = request.form['plugin_params']
+                storage[storage_type] = PM.get_plugin(plugin).reader(file.stream, params, info)
+            else:
+                storage[storage_type] = transform_data(file.stream, file_type, format_mode)
             info['sample_rate'] = int(freq)
             return 'CREATED', 201
         else:
@@ -277,10 +298,10 @@ class Reference(Resource):
         storage = kwargs['storage']
         params = kwargs['params']
         storage_type = kwargs['modify_storage_type']
-        print(params)
+        channels = kwargs['channels']
 
         raw = copy.deepcopy(source)
-        storage[storage_type] = re_reference(raw, mode=params['mode'], channel=params['ref_ch'])
+        storage[storage_type] = re_reference(raw[channels], mode=params['mode'], channel=params['ref_ch'])
 
 
 class Resample(Resource):
@@ -336,9 +357,9 @@ class Filter(Resource):
         method = params['method']
 
         raw = copy.deepcopy(source)
-        print(params)
+        channels = kwargs['channels']
         # filter data
-        storage[storage_type] = fir_filter(raw, btype=method, low=params['low'], high=params['high'],
+        storage[storage_type] = fir_filter(raw[channels], btype=method, low=params['low'], high=params['high'],
                                            fs=info['sample_rate'])
         return 'OK'
 
@@ -514,9 +535,6 @@ class TimeFrequency(Resource):
         return 'OK'
 
 
-TASKS = {}
-
-
 def async_api(wrapped_function):
     @wraps(wrapped_function)
     def new_function(*args, **kwargs):
@@ -602,6 +620,58 @@ class Task(Resource):
         return 'Ok'
 
 
+class Plugin(Resource):
+    def get(self):
+        plugins = PM.list_plugin()
+        return jsonify(list(plugins))
+
+    def post(self):
+        if 'file' not in request.files:
+            return 'No file'
+        file = request.files['file']
+        if file:
+            filename = file.filename
+            basename, extension = os.path.splitext(filename)
+            file.save(os.path.join('./plugins', filename))
+            sys.path.insert(0, './plugins')
+            module = importlib.import_module(basename)
+            PM.register(basename, module)
+        return str(PM.list_plugin())
+
+    def delete(self, plugin):
+        PM.del_plugin(plugin)
+        return 'ok'
+
+
+class PluginHandler(Resource):
+    def get(self, plugin):
+        pass
+
+    @init_data(PluginSchema, 'Plugin')
+    @init_channels('Plugin')
+    def post(self, **kwargs):
+        info = kwargs['info']
+        source = kwargs['source']
+        storage = kwargs['storage']
+        storage_type = kwargs['modify_storage_type']
+        params = kwargs['params']
+        plugin_type = params['plugin_type']
+        plugin_params = params['plugin_params']
+        plugin_name = kwargs['plugin']
+        channels = params['channels']
+
+        raw = copy.deepcopy(source)
+        plugin = PM.get_plugin(plugin_name)
+
+        if plugin_type == 'Pre_Process':
+            storage[storage_type] = plugin.process(raw[channels], plugin_params, info)
+        elif plugin_type == 'Feature_Ext':
+            storage[storage_type][plugin_name] = plugin.extract(raw[channels], plugin_params, info)
+        else:
+            abort(BAD_REQUEST, 'Error Plugin Type')
+        return 200
+
+
 @app.after_request
 def after_request_func(response):
     # url = request.url
@@ -609,7 +679,7 @@ def after_request_func(response):
     # white_list = ['data', 'filter', 'ica', 'psd', 'de', 'frequency', 'timefrequency']
     #
     # if request.method == 'GET' or request.method == 'POST':
-    #     print(DATA_STORAGE['4_20140621.mat']['Channels'])
+    #     print(DATA_STORAGE)
     return response
 
 
@@ -628,7 +698,9 @@ api.add_resource(Task, '/task', '/task/<string:task_id>', '/task/<string:task_id
 api.add_resource(FileTreeList, '/filetreelist')
 api.add_resource(Reference, '/reference/<string:filename>')
 api.add_resource(Resample, '/resample/<string:filename>')
+api.add_resource(Plugin, '/plugin', '/plugin/<string:plugin>')
+api.add_resource(PluginHandler, '/pluginhandler/<string:plugin>/<string:filename>')
 
 if __name__ == '__main__':
-    app.debug = True
+    # app.debug = True
     app.run()
