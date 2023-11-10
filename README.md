@@ -11,7 +11,7 @@ flexibility of personal offline usage or private deployment.
 During development, I used Node.js > 16.5 and Python 3.11.4 as the base environment. You can download Nodejs from the
 following [link](https://nodejs.org/en).
 
-> You may need restart compute to update Node env.
+> You may need to restart your computer after installing NodeJS to update the Node environment.
 
 2. Install dependencies
 
