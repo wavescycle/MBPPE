@@ -343,12 +343,44 @@
               </el-collapse>
             </el-descriptions-item>
             <el-descriptions-item label="Params">
-              <highlightjs autodetect :code="JSON.stringify(specialTaskInfo.task_info,null,2)"/>
+              <el-collapse>
+                <el-collapse-item name="Params">
+                  <template #title>
+                    Click to View Details
+                  </template>
+                  <highlightjs autodetect :code="JSON.stringify(specialTaskInfo.task_info,null,2)"/>
+                </el-collapse-item>
+              </el-collapse>
             </el-descriptions-item>
           </el-descriptions>
+          <el-divider/>
+          <h3 style="margin-bottom: 15px">Comments</h3>
+          <el-scrollbar max-height="400px">
+            <el-timeline>
+              <el-timeline-item v-for="(comment,index) in comments" :key="index" :timestamp="comment.date"
+                                placement="top">
+                <el-card>
+                  <h4>{{ comment.title }}</h4>
+                  <p>{{ comment.comment }}</p>
+                </el-card>
+              </el-timeline-item>
+            </el-timeline>
+          </el-scrollbar>
+          <el-divider/>
+          <el-form ref="commentRef" :model="commentTemplate">
+            <el-form-item prop="title">
+              <el-input v-model="commentTemplate.title" placeholder="title"/>
+            </el-form-item>
+            <el-form-item prop="comment">
+              <el-input v-model="commentTemplate.comment"
+                        placeholder="comment"
+                        type="textarea"/>
+            </el-form-item>
+            <el-button type="primary" @click="addComment(drawerTitle,commentRef)">Comment</el-button>
+            <el-button @click="commentRest(commentRef)">Reset</el-button>
+          </el-form>
         </el-skeleton>
-      </el-drawer
-      >
+      </el-drawer>
     </el-main>
     <el-footer style="text-align: center;">
       <p style="color: #909399">Click progress icon could get more information</p>
@@ -358,8 +390,17 @@
 </template>
 <script>
 import {ref, reactive, computed, onMounted} from 'vue'
-import {ElTable} from 'element-plus'
-import {getAllTaskStatus, getTaskStatus, postTask, getFileList, deleteTask, getTaskData, getPlugin} from "../utils/api";
+import {ElTable, ElNotification} from 'element-plus'
+import {
+  getAllTaskStatus,
+  getTaskStatus,
+  postTask,
+  getFileList,
+  deleteTask,
+  getTaskData,
+  getPlugin,
+  postComments, getComments,
+} from "../utils/api";
 import {CH_NAMES} from "../config/config.json";
 
 export default {
@@ -378,6 +419,7 @@ export default {
     const fileList = ref([])
     const emptyShow = ref(true)
     const specialTaskInfo = ref(null)
+    const commentRef = ref()
     const taskAddData = reactive({
       filenames: [],
       channels: [],
@@ -404,6 +446,11 @@ export default {
       'WAIT': 'warning',
     }
     const refMode = ["average", "channel", "ear"]
+    const commentTemplate = reactive({
+      title: localStorage.getItem("MBPPE-Name") ?? "User1",
+      comment: ""
+    })
+    const comments = ref([])
     const drawerOpen = () => {
       drawerLoading.value = true
     }
@@ -452,8 +499,9 @@ export default {
       tableData.value = resp.data.status_info
       taskDataExportProgress.value = new Array(resp.data.status_info.length).fill(0)
       const channels = resp.data.channels.map((e) => CH_NAMES[e]);
-
       specialTaskInfo.value = {task_info: resp.data.task_info, channels}
+      let commentResp = await getComments(taskId)
+      comments.value = commentResp.data
       drawerLoading.value = false
     }
     const decreaseIndex = () => {
@@ -610,6 +658,25 @@ export default {
         taskTabRef.value = 'feature-ext'
       }
     }
+    const addComment = (piplineId, formEl) => {
+      commentTemplate.date = new Date().toLocaleString()
+      postComments(piplineId, commentTemplate).then(res => {
+        if (res.status === 201) {
+          localStorage.setItem("MBPPE-Name", commentTemplate.title)
+          comments.value = res.data
+          formEl.resetFields()
+          ElNotification({
+            type: "success",
+            message: "success",
+          })
+        }
+      })
+
+    }
+    const commentRest = (formEl) => {
+      if (!formEl) return
+      formEl.resetFields()
+    }
 
 
     return {
@@ -649,6 +716,11 @@ export default {
       taskDataExportProgress,
       refMode,
       pluginList,
+      commentTemplate,
+      commentRef,
+      commentRest,
+      addComment,
+      comments
     }
   }
 }
@@ -672,6 +744,10 @@ export default {
 
 .el-row:last-child {
   margin-bottom: 0;
+}
+
+.el-scrollbar {
+  height: auto;
 }
 </style>
 

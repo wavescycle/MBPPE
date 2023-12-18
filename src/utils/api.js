@@ -283,6 +283,14 @@ async function postPluginHandler(filename, channels, pre_data, config = {},) {
     })
 }
 
+async function getComments(piplineId) {
+    return await req.get(`/comments/${piplineId}`)
+}
+
+async function postComments(piplineId, data) {
+    return await req.post(`/comments/${piplineId}`, {data})
+}
+
 export {
     checkStatus,
     getData,
@@ -315,5 +323,7 @@ export {
     postResample,
     getPlugin,
     postPluginHandler,
-    delPlugin
+    delPlugin,
+    getComments,
+    postComments
 };

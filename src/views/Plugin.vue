@@ -45,8 +45,6 @@ export default {
   setup() {
     const UPLOAD_URL = `${URL}:${PORT}/plugin`
     const tableData = ref(null);
-    tableData.value = ['2016-05-03', '2017-05-03'
-    ]
     const deleteAction = (pluginName) => {
       delPlugin(pluginName).then(res => {
         if (res.status === 200) {

@@ -54,6 +54,7 @@ DATA_STORAGE_TEMPLATE = {
 DATA_STORAGE = dict()
 ALLOWED_EXTENSIONS = {'mat', 'npz', 'xlsx'}
 TASKS = {}
+COMMENTS = {}
 
 
 def transform_data(raw, file_type, format_mode):
@@ -687,6 +688,17 @@ class PluginHandler(Resource):
         return 200
 
 
+class Comments(Resource):
+    def get(self, pipeline_id):
+        return COMMENTS.get(pipeline_id, [])
+
+    def post(self, pipeline_id):
+        params = request.json
+        COMMENTS.setdefault(pipeline_id, [])
+        COMMENTS[pipeline_id].append(params['data'])
+        return COMMENTS[pipeline_id], 201
+
+
 @app.after_request
 def after_request_func(response):
     # url = request.url
@@ -715,6 +727,7 @@ api.add_resource(Reference, '/reference/<string:filename>')
 api.add_resource(Resample, '/resample/<string:filename>')
 api.add_resource(Plugin, '/plugin', '/plugin/<string:plugin>')
 api.add_resource(PluginHandler, '/pluginhandler/<string:plugin>/<string:filename>')
+api.add_resource(Comments, '/comments/<string:pipeline_id>')
 
 if __name__ == '__main__':
     # app.debug = True
