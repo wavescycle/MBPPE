@@ -14,3 +14,24 @@ def extract(data, params, **kwargs):
     print("feature")
     # do some modify
     return data
+
+
+def visualization(data, params, **kwargs):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # Create a range of values
+    x = np.linspace(0, 10, 100)
+
+    # Create a simple function of x
+    y = np.sin(x)
+
+    # Create a new figure
+    plt.figure()
+
+    # Plot x against y
+    plt.plot(x, y)
+
+    # Create a BytesIO object and save the figure to it
+    # Return the BytesIO object
+    return plt

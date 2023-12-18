@@ -22,7 +22,7 @@ def get_data(feature_ext=None, **kwargs):
     storage_type = kwargs['modify_storage_type']
     params = kwargs['params']
     channels = params['channels']
-    storage_path = params['storage_path']
+    storage_path = params.get('storage_path')
     if storage_path == 'Feature_Ext':
         feature_ext = params.get('feature_ext', None)
     data = storage[storage_type]

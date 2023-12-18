@@ -27,15 +27,21 @@
             label="Chart"
             prop="type"
             @change="chartChange"
-
         >
+
           <el-select v-model="form.type" style="width: 150px">
-            <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-            />
+            <el-option-group
+                v-for="group in options"
+                :key="group.label"
+                :label="group.label"
+            >
+              <el-option
+                  v-for="item in group.options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+              />
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item
@@ -58,6 +64,14 @@
                 :value="i"
             ></el-option>
           </el-select>
+        </el-form-item>
+        <el-form-item label="Params" v-if="form.type.startsWith('Plugin')" prop="PluginParams">
+          <el-input
+              style="width: 300px"
+              v-model="form.pluginParams"
+              :rows="2"
+              type="textarea"
+          />
         </el-form-item>
         <el-form-item label="PreData" prop="preData">
           <el-select
@@ -91,7 +105,7 @@
 <script>
 import * as echarts from "echarts";
 import charts from "../utils/charts";
-import {getFileList, getPreData} from "../utils/api";
+import {getFileList, getPlugin, getPreData, postPluginHandler} from "../utils/api";
 import {reactive, computed, ref, onMounted} from "vue";
 import {CH_NAMES} from "../config/config.json";
 
@@ -115,25 +129,30 @@ export default {
       preData: "",
       preDataList: [],
       type: "lineChart",
+      pluginParams: ""
     });
-    const options = [
-      {
-        value: "lineChart",
-        label: "Raw",
-      },
-      {
-        value: "psdChart",
-        label: "PSD",
-      },
-      {
-        value: "freqChart",
-        label: "Frequency",
-      },
-      {
-        value: "timeFreqChart",
-        label: "TimeFrequency",
-      },
-    ];
+
+    const options = [{
+      label: 'Built In',
+      options: [
+        {
+          value: "lineChart",
+          label: "Raw",
+        },
+        {
+          value: "psdChart",
+          label: "PSD",
+        },
+        {
+          value: "freqChart",
+          label: "Frequency",
+        },
+        {
+          value: "timeFreqChart",
+          label: "TimeFrequency",
+        }]
+    }]
+
     const featureExtMap = {
       'lineChart': '',
       'psdChart': 'PSD',
@@ -164,6 +183,16 @@ export default {
       getFileList().then((res) => {
         form.fileList = res.data;
       });
+      getPlugin().then(res => {
+        options.push({
+          label: 'Plugins', options: res.data.map(item => {
+            return {
+              value: `Plugins$${item}`,
+              label: item
+            }
+          })
+        })
+      })
       const myChart = echarts.init(main.value, null, {
         width: width,
         height: height,
@@ -204,7 +233,13 @@ export default {
               form.channels = 0
             }
           }
-          if (typeof chart[form.type] === "function") {
+          if (form.type.startsWith('Plugin')) {
+            chart.imageChart(form.name,
+                form.preData,
+                form.channels,
+                form.type.split('$')[1],
+                form.pluginParams)
+          } else if (typeof chart[form.type] === "function") {
             chart[form.type](form.name, form.preData, form.channels);
           } else {
             chart.errorChart();

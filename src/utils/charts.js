@@ -1,5 +1,5 @@
 import {CH_NAMES} from "../config/config.json";
-import {getData, getFrequency, getPSD, getTimeFrequency} from "./api";
+import {getData, getFrequency, getPSD, getTimeFrequency, postPluginHandler} from "./api";
 
 class myChart {
     // Constants
@@ -714,6 +714,25 @@ class myChart {
             this.errorChart(data.data);
         }
         this.chart.hideLoading();
+    }
+
+    async imageChart(filename, preData, channels, plugin, params) {
+        postPluginHandler(filename, channels, preData, {
+            plugin: plugin, "plugin_type": "Visualization", 'plugin_params': params
+        }).then(res => {
+            this.chart.setOption({
+                    graphic: [
+                        {
+                            type: 'image',
+                            style: {
+                                image: res.data.data
+                            }
+
+                        }
+                    ]
+                }
+            )
+        })
     }
 }
 

@@ -24,6 +24,8 @@ import sys
 from plugin import PM
 import importlib
 from enum import Enum
+import urllib.parse
+import base64
 
 app = Flask(__name__)
 api = Api(app)
@@ -83,7 +85,9 @@ def stream_data(data, axis=True, unit=1, file_type="npy"):
 def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', source_path='Pre_Process'):
     def decorator(fuc):
         def wrapper(*args, **kwargs):
-            nonlocal storage_path, storage_type, source_path
+            temp_storage_type = storage_type
+            temp_storage_path = storage_path
+            temp_source_path = source_path
             if request.method == 'GET':
                 params = request.args
             else:
@@ -98,30 +102,32 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
             DATA_STORAGE.setdefault(filename, copy.deepcopy(DATA_STORAGE_TEMPLATE))
 
             if params:
+                print(params)
                 pre_data = params.get('pre_data', 'Raw')
-                storage_path = params.get('storage_path', storage_path)
-
+                temp_storage_path = params.get('storage_path', storage_path)
             else:
                 pre_data = 'Raw'
 
             info = DATA_STORAGE[filename]['Info']
-            storage = DATA_STORAGE[filename][storage_path]
-            source = DATA_STORAGE[filename][source_path]
+            print(temp_storage_path)
+            storage = DATA_STORAGE[filename][temp_storage_path]
+            source = DATA_STORAGE[filename][temp_source_path]
 
-            if storage_type == 'Plugin':
-                storage_path = params['plugin_type']
-                storage_type = kwargs['plugin']
-                storage = DATA_STORAGE[filename][storage_path]
+            if temp_storage_type == 'Plugin':
+                temp_storage_path = params['plugin_type']
+                temp_storage_type = kwargs['plugin']
+                if params['plugin_type'] != 'Visualization':
+                    storage = DATA_STORAGE[filename][temp_storage_path]
 
             modify_source_type = modify_storage_type = pre_data
 
-            if request.method == 'POST' and storage_path == 'Pre_Process':
-                modify_storage_type = f"{pre_data}_{storage_type}" if pre_data != 'Raw' else storage_type
+            if request.method == 'POST' and temp_storage_path == 'Pre_Process':
+                modify_storage_type = f"{pre_data}_{temp_storage_type}" if pre_data != 'Raw' else temp_storage_type
 
-            if storage_path == 'Feature_Ext':
+            if temp_storage_path == 'Feature_Ext':
                 # modify_storage_type = pre_data
                 storage.setdefault(modify_storage_type, {})
-                storage[modify_storage_type].setdefault(storage_type, None)
+                storage[modify_storage_type].setdefault(temp_storage_type, None)
             else:
                 # modify_storage_type = f"{pre_data}_{storage_type}" if pre_data != 'Raw' else storage_type
                 storage.setdefault(modify_storage_type, None)
@@ -667,6 +673,15 @@ class PluginHandler(Resource):
             storage[storage_type] = plugin.process(raw[channels], plugin_params, info)
         elif plugin_type == 'Feature_Ext':
             storage[storage_type][plugin_name] = plugin.extract(raw[channels], plugin_params, info)
+        elif plugin_type == 'Visualization':
+            plt = plugin.visualization(raw[channels], plugin_params, info=None)
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            # Create a data URI
+            datauri = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode()
+            buf.close()
+            return {'data': datauri}
         else:
             abort(BAD_REQUEST, 'Error Plugin Type')
         return 200

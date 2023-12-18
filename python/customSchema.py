@@ -23,10 +23,10 @@ class DataSchema(BaseSchema):
     start = fields.Int(data_key="start", missing=0)
     end = fields.Int(data_key="end", missing=10)
     method = fields.String(data_key="method", missing="")
-    plugin = fields.String(data_key="plugin", missing=None)
-    storage_path = fields.String(data_key="storage_path", missing=None)
-    source_path = fields.String(data_key="source_path", missing=None)
-    feature_ext = fields.String(data_key="Feature_Ext", missing=None)
+    plugin = fields.String(data_key="plugin")
+    storage_path = fields.String(data_key="storage_path")
+    source_path = fields.String(data_key="source_path")
+    feature_ext = fields.String(data_key="Feature_Ext")
 
 
 class FilterSchema(BaseSchema):
@@ -67,7 +67,8 @@ class SampleSchema(BaseSchema):
 
 class PluginSchema(BaseSchema):
     channels = fields.List(fields.Int, required=True, data_key="channels")
-    plugin_type = fields.Str(data_key="plugin_type", validate=OneOf((["Reader", "Pre_Process", "Feature_Ext"])))
+    plugin_type = fields.Str(data_key="plugin_type",
+                             validate=OneOf((["Reader", "Pre_Process", "Feature_Ext", "Visualization"])))
     plugin_params = fields.Str(data_key="plugin_params")
 
 
