@@ -140,6 +140,7 @@ export default {
         }
       }
     }
+    // Processing of requests for feature extract methods
     const onSubmit = () => {
       formRef.value.validate(async (valid) => {
         if (valid) {
@@ -183,7 +184,7 @@ export default {
     const onReset = () => {
       formRef.value.resetFields();
     };
-
+    // Get the list of files and plugins
     onMounted(() => {
       getFileList().then((res) => {
         form.fileList = res.data;

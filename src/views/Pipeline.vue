@@ -459,6 +459,7 @@ export default {
         fileList.value = resp.data
       })
     }
+    // Download data
     const download = (taskId, fileType) => {
       let select = multipleTableRef.value.getSelectionRows()
       for (let s of select) {
@@ -486,12 +487,13 @@ export default {
     const selectableJudge = (row, index) => {
       return row.status === 'SUCCESS'
     }
-
+    // Processing download progress
     const calculatePercentage = (task) => {
       const status = task.status_info
       const successStatus = status.filter(item => item.status === 'SUCCESS').length
       return Number((successStatus / status.length * 100).toFixed(2))
     }
+    // Show tasks details
     const showDrawer = async (taskId) => {
       drawerTitle.value = taskId
       drawer.value = true
@@ -504,6 +506,7 @@ export default {
       comments.value = commentResp.data
       drawerLoading.value = false
     }
+    // Adjustment of the sequence of tasks
     const decreaseIndex = () => {
       if (currentTaskIndex.value > 0) {
         currentTaskIndex.value--;
@@ -551,7 +554,7 @@ export default {
       }
       return labels;
     });
-
+    // Updating the task list
     const refreshTasks = async () => {
       let resp = await getAllTaskStatus()
       taskList.value = resp.data
@@ -607,6 +610,7 @@ export default {
       // })
     }
 
+    // Create Task
     const submitTask = (validateRef) => {
       validateRef.validate((valid) => {
         if (valid) {
@@ -640,7 +644,7 @@ export default {
         location.reload();
       })
     }
-
+    // Add task step by step
     const addTaskToData = () => {
       taskAddData.tasks.push(JSON.parse(JSON.stringify({seq: currentTaskIndex.value, task: taskStepInfo})))
     }

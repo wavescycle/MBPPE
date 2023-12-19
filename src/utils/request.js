@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// Repackaging axios request to handle front-end and back-end requests
 class request {
     constructor(URL, PORT) {
         this._request = axios.create({

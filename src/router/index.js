@@ -1,6 +1,15 @@
 import {createRouter, createWebHashHistory} from "vue-router";
 import Home from "../views/Home.vue";
-
+// Page Routing
+/**
+ * @dashboard: Data overview
+ * @upload: For uploading local data/datasets
+ * @preprocess: Display preprocessing methods
+ * @feature: Display feature extract methods
+ * @charts: visualization
+ * @pipeline: Management of pipeline
+ * @plugin: Management of plugin
+ */
 const routes = [
     {
         path: "/",

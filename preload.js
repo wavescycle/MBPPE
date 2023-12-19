@@ -1,5 +1,5 @@
 const { ipcRenderer } = require("electron");
-
+// Deprecated
 function runServer() {
   var python = require("child_process").spawn("python", ["./python/app.py"]);
   // var python = require("child_process").execFile(

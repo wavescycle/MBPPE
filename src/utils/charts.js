@@ -1,6 +1,9 @@
 import {CH_NAMES} from "../config/config.json";
 import {getData, getFrequency, getPSD, getTimeFrequency, postPluginHandler} from "./api";
 
+/**
+ * A visualization class based on echarts
+ */
 class myChart {
     // Constants
     containLabel = false;
@@ -37,19 +40,6 @@ class myChart {
             else return e + diff;
         });
         this.lineChart(this.filename, this.preData, newChannels);
-    }
-
-    _initChart(option, data) {
-        this.chart.showLoading();
-        if (data.status === 200) {
-            option.dataset.source = data.data;
-            this.chart.setOption(option, {
-                notMerge: true,
-            });
-        } else {
-            this.errorChart(data.data);
-        }
-        this.chart.hideLoading();
     }
 
     // save image to lcoal
@@ -477,6 +467,7 @@ class myChart {
         this.chart.hideLoading();
     }
 
+    // frequency chart
     async freqChart(filename, preData, channels, start = 0, end = 10) {
         this.chart.showLoading();
         this.filename = filename;
@@ -602,6 +593,7 @@ class myChart {
         this.chart.hideLoading();
     }
 
+    // Time-frequency Chart
     async timeFreqChart(filename, preData, channels, start = 0, end = 10) {
         this.chart.showLoading();
         this.filename = filename;
@@ -716,6 +708,7 @@ class myChart {
         this.chart.hideLoading();
     }
 
+    // Direct display of image for showing plugin visualization method
     async imageChart(filename, preData, channels, plugin, params) {
         postPluginHandler(filename, channels, preData, {
             plugin: plugin, "plugin_type": "Visualization", 'plugin_params': params

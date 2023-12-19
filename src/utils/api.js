@@ -6,10 +6,20 @@ import Qs from "qs";
 const req = new request(URL, PORT);
 
 /**
+ * This file contains all the APIs for front and back interactions.
+ * When designing the interface, we follow the RestfulAPI standard.
+ * The get method is used to retrieve data,
+ * the post method is used to add and modify data,
+ * and delete is used to remove data.
+ */
+
+/**
  * @get api, config
  * @post api, data, config
  * @config https://axios-http.com/docs/req_config
  */
+
+// Remove blank items from request parameters
 function delEmptyItems(data) {
     Object.keys(data).forEach(
         (key) =>
@@ -19,6 +29,7 @@ function delEmptyItems(data) {
     return data;
 }
 
+// Convert numpy data to JavaScript array
 function decodeArrayBuffer(res) {
     if (res.status === 200) {
         const data = npy(res.data);
@@ -30,21 +41,7 @@ function decodeArrayBuffer(res) {
     return res;
 }
 
-async function checkStatus() {
-    let res = await req.get("/status");
-    return res.status;
-}
-
-async function getFigure() {
-    return await req.get("/getFigure", {
-        responseType: "stream",
-    });
-}
-
-async function getFileStatus() {
-    return await req.get("/filestatus");
-}
-
+// Common data acquisition methods
 async function getData(filename, channels, pre_data = 'Raw', config = {}) {
     let res = await req.get(`/data/${filename}`, {
         params: {
@@ -60,6 +57,7 @@ async function getData(filename, channels, pre_data = 'Raw', config = {}) {
     return decodeArrayBuffer(res);
 }
 
+// Upload local data
 async function postData(filename, file, uploadProgress) {
     return await req.post(`/data/${filename}`, file, {
         onUploadProgress: uploadProgress,
@@ -77,7 +75,7 @@ async function getFileList(pre_data = "") {
         },
     });
 }
-
+// built-in method
 async function getFilter(filename, channels, preData, config = {}) {
     let res = await req.get(`/filter/${filename}`, {
         params: delEmptyItems({
@@ -202,34 +200,6 @@ async function getPreData(filename, feature_ext = '') {
     })
 }
 
-async function getTaskStatus(task_id) {
-    return await req.get(`/task${task_id ? '/' + task_id : ''}`)
-}
-
-async function getAllTaskStatus() {
-    return await getTaskStatus()
-}
-
-async function getTaskData(taskId, filename, fileType, onDownloadProgress) {
-    return await req.get(`/task/${taskId}/${filename}`, {
-        params: {file_type: fileType},
-        onDownloadProgress: onDownloadProgress,
-        responseType: "blob",
-    });
-}
-
-async function postTask(task) {
-    return await req.post('/task', task)
-}
-
-export async function deleteTask(taskId) {
-    return await req.delete(`/task/${taskId}`)
-}
-
-
-async function getFileTreeList() {
-    return await req.get('/filetreelist')
-}
 
 async function getReference(filename, channels, pre_data, config = {}) {
     return await req.get(`/reference/${filename}`, {
@@ -266,6 +236,37 @@ async function postResample(filename, pre_data, config = {}) {
     })
 }
 
+// Pipeline Task APIs
+async function getTaskStatus(task_id) {
+    return await req.get(`/task${task_id ? '/' + task_id : ''}`)
+}
+
+async function getAllTaskStatus() {
+    return await getTaskStatus()
+}
+
+async function getTaskData(taskId, filename, fileType, onDownloadProgress) {
+    return await req.get(`/task/${taskId}/${filename}`, {
+        params: {file_type: fileType},
+        onDownloadProgress: onDownloadProgress,
+        responseType: "blob",
+    });
+}
+
+async function postTask(task) {
+    return await req.post('/task', task)
+}
+
+export async function deleteTask(taskId) {
+    return await req.delete(`/task/${taskId}`)
+}
+
+
+async function getFileTreeList() {
+    return await req.get('/filetreelist')
+}
+
+// Plugin APis
 async function getPlugin() {
     return await req.get('/plugin')
 }
@@ -283,6 +284,7 @@ async function postPluginHandler(filename, channels, pre_data, config = {},) {
     })
 }
 
+// Comments APIs
 async function getComments(piplineId) {
     return await req.get(`/comments/${piplineId}`)
 }
@@ -292,12 +294,10 @@ async function postComments(piplineId, data) {
 }
 
 export {
-    checkStatus,
     getData,
     postData,
     deleteData,
     getFileList,
-    getFileStatus,
     getFilter,
     postFilter,
     getICA,

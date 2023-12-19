@@ -112,6 +112,7 @@ import {CH_NAMES} from "../config/config.json";
 export default {
   name: "basecharts",
   setup() {
+    // Initializing Constants
     const rules = {
       name: [
         {required: true, message: "Select a file", trigger: "blur"},
@@ -131,7 +132,6 @@ export default {
       type: "lineChart",
       pluginParams: ""
     });
-
     const options = [{
       label: 'Built In',
       options: [
@@ -152,7 +152,6 @@ export default {
           label: "TimeFrequency",
         }]
     }]
-
     const featureExtMap = {
       'lineChart': '',
       'psdChart': 'PSD',
@@ -160,6 +159,7 @@ export default {
       'timeFreqChart': 'Time_Freq'
     }
     const emptyShow = ref(true)
+    // Visualization size
     // const width = 700;
     // const height = 500;
     const width = 700;
@@ -193,6 +193,7 @@ export default {
           })
         })
       })
+      // init chart
       const myChart = echarts.init(main.value, null, {
         width: width,
         height: height,
@@ -216,6 +217,7 @@ export default {
         }
       }
     }
+    // Processing of visualization requests
     const onSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {

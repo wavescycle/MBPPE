@@ -102,6 +102,7 @@ export default {
       formRef.value.resetFields();
     };
 
+    // Uploading files
     async function uploadFile(params) {
       let file = params.file;
       let filename = file.name;

@@ -38,12 +38,10 @@
 </template>
 
 <script>
-import {getFileStatus, download, getFileTreeList, deleteData} from "../utils/api";
-import {CH_NAMES} from "../config/config.json";
+import {download, getFileTreeList, deleteData} from "../utils/api";
 import {ElNotification} from "element-plus"
 import {ref, onMounted,} from "vue";
 
-// TODO: All data get support need_axis
 export default {
   name: "dashboard",
   setup() {
@@ -54,6 +52,7 @@ export default {
     const saveType = ref("data");
     const dataType = ref([])
 
+    // Converting data into a multi-level list
     function transform(obj) {
       let result = [];
       for (let key in obj) {
@@ -77,11 +76,13 @@ export default {
     const selectChange = () => {
       console.log(dataType.value)
     }
+    // Delete Data Operation
     const deleteAction = (filename) => {
       deleteData(filename).then(res => {
         refreshData()
       })
     }
+    // Export Data Operation
     const exportAction = (index, fileType) => {
       const rowValue = tableData.value[index]
       const typeValue = dataType.value[index]

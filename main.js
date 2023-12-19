@@ -4,9 +4,13 @@ const {spawn, execFile} = require("child_process")
 const kill = require("tree-kill")
 const path = require("path");
 const isDev = process.env.IS_DEV === "true";
+/**
+ * For loading clients in local mode
+ * */
 
 let localSever
 
+// loading web ui
 app.on("ready", () => {
     const mainWindow = new BrowserWindow({
         width: 1200,
@@ -27,7 +31,7 @@ app.on("ready", () => {
     }
     mainWindow.setMenuBarVisibility(false)
 
-    // Start a local server
+    // Start a local python server
     if (USE_LOCAL_SERVER) {
         localSever = spawn("python", ["./python/app.py"]);
         // localSever = execFile(path.join(__dirname, "./server/server.exe"));
@@ -43,6 +47,7 @@ app.on("ready", () => {
     }
 });
 
+// kill the python process when closing the client
 app.on("window-all-closed", () => {
     if (localSever) {
         kill(localSever.pid)

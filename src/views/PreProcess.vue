@@ -242,7 +242,7 @@ export default {
         }
       }
     }
-    // Submit
+    // Processing of requests for feature extract methods
     const onSubmit = () => {
       // Form validation
       formRef.value.validate(async (valid) => {
