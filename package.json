@@ -1,10 +1,11 @@
 {
   "name": "eeg",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.1.0",
   "main": "main.js",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"npm run electron:dev\"",
+    "dev:local": "concurrently -k \"vite\" \"npm run electron:dev\"",
+    "dev:broswer": "concurrently -k \"python -m pyserver.app\" \"npm run preview\"",
     "build": "vite build",
     "preview": "vite",
     "electron:dev": "cross-env IS_DEV=true electron ."
