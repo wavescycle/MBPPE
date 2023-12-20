@@ -8,11 +8,12 @@ import numpy as np
 from scipy.io import loadmat
 import pickle
 
-ALLOWED_EXTENSIONS = {'mat', 'npz', 'xlsx'}
-
 
 class PreData(Resource):
     def get(self, filename):
+        """
+        Returns the processing operations that have been performed on a particular filename
+        """
         params = request.args
         feature_ext = params.get('feature_ext')
 
@@ -42,6 +43,9 @@ class Data(Resource):
 
     @init_data()
     def post(self, **kwargs):
+        """
+        Upload local data and store it temporarily
+        """
         freq = request.form['freq']
         format_mode = request.form['format']
         plugin = request.form['plugin']
@@ -50,8 +54,8 @@ class Data(Resource):
         storage = kwargs['storage']
         storage_type = kwargs['modify_storage_type']
         info = kwargs['info']
-        is_allowed, file_type = allowed_file(filename)
-        if file and is_allowed:
+        file_type = get_file_type(filename)
+        if file and file_type is not None:
             # read file use stream
             if plugin:
                 params = request.form['plugin_params']
@@ -69,18 +73,25 @@ class Data(Resource):
 
 
 def transform_data(raw, file_type, format_mode):
+    """
+    Converting files to matrix form
+    """
     return getattr(Load, file_type)(raw, format_mode)
 
 
-def allowed_file(filename):
+def get_file_type(filename):
     if '.' in filename:
         file_type = filename.rsplit('.', 1)[1].lower()
-        return file_type in ALLOWED_EXTENSIONS, file_type
+        return file_type
     else:
-        return False, None
+        return None
 
 
 class Load:
+    """
+    Built-in methods for reading and converting files
+    """
+
     @staticmethod
     def mat(file, mode='truncate'):
         data = loadmat(file)

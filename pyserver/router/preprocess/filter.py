@@ -11,6 +11,9 @@ class Filter(Resource):
     @init_data(FilterSchema, storage_type='Filter')
     @init_channels('Filter')
     def get(self, **kwargs):
+        """
+        Get filter Data
+        """
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -24,6 +27,9 @@ class Filter(Resource):
     @init_data(FilterSchema, storage_type='Filter')
     @init_channels('Filter')
     def post(self, **kwargs):
+        """
+        Filtering of data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

@@ -1,12 +1,17 @@
+"""
+This file is used to define the schema to deserialize the request data into objects
+"""
 from marshmallow import Schema, fields, pre_load
 from marshmallow.validate import OneOf
 
 
+# Define the base schema
 class BaseSchema(Schema):
     pre_data = fields.String(data_key="pre_data", missing="Raw")
     need_axis = fields.Boolean(data_key="need_axis", missing=False)
     file_type = fields.String(data_key="file_type", missing="npy")
 
+    # Handling channels in get requests
     @pre_load
     def preload(self, value, **kwargs):
         try:
@@ -43,6 +48,7 @@ class BasicSchema(BaseSchema):
     band_list = fields.String(data_key="band_list", missing=None)
 
 
+# reference Schema
 class RefSchema(BaseSchema):
     channels = fields.List(fields.Int, data_key="channels", missing=[])
     mode = fields.Str(data_key="mode", missing="average")
@@ -61,6 +67,7 @@ class RefSchema(BaseSchema):
         return value
 
 
+# resample Schema
 class SampleSchema(BaseSchema):
     new_fs = fields.Int(data_key="new_fs", required=True)
 
@@ -72,6 +79,7 @@ class PluginSchema(BaseSchema):
     plugin_params = fields.Str(data_key="plugin_params")
 
 
+# Schema in asynchronous
 class AsyncFilterSchema(Schema):
     method = fields.Str(data_key="method", validate=OneOf((["lowpass", "highpass", "bandpass"])))
     low = fields.Float(data_key="low", missing=None)

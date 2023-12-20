@@ -54,24 +54,7 @@ def async_api(wrapped_function):
             # Create a request context similar to that of the original request
             # so that the task can have access to flask.g, flask.request, etc.
             with flask_app.request_context(environ):
-                # try:
                 wrapped_function(*args, **kwargs)
-
-                # tasks[task_id]['return_value'] = wrapped_function(*args, **kwargs)
-                # except HTTPException as e:
-                #     tasks[task_id]['return_value'] = current_app.handle_http_exception(e)
-                # except Exception as e:
-                #     # The function raised an exception, so we set a 500 error
-                #     tasks[task_id]['return_value'] = InternalServerError()
-                #     if current_app.debug:
-                #         # We want to find out if something happened so reraise
-                #         raise
-                # finally:
-                #     # We record the time of the response, to help in garbage
-                #     # collecting old tasks
-                #     tasks[task_id]['completion_timestamp'] = datetime.timestamp(datetime.utcnow())
-                #
-                #     # close the database session (if any)
 
         # Assign an id to the asynchronous task
         # task_id = uuid.uuid4().hex
@@ -118,6 +101,9 @@ class Task(Resource):
 
     @async_api
     def post(self):
+        """
+        Creating pipeline tasks
+        """
         # perform some intensive processing
         task_id = uuid.uuid4().hex
         # task_id = '187acda6aa0447739a37ae74f63dfc4a'

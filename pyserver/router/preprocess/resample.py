@@ -11,6 +11,9 @@ class Resample(Resource):
     @init_data(SampleSchema, storage_type='Sample')
     @init_channels('Sample')
     def get(self, **kwargs):
+        """
+        Get Resample data
+        """
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -22,6 +25,9 @@ class Resample(Resource):
     @init_data(SampleSchema, storage_type='Sample')
     @init_channels('Sample')
     def post(self, **kwargs):
+        """
+        Resample the data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

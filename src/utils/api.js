@@ -64,10 +64,12 @@ async function postData(filename, file, uploadProgress) {
     });
 }
 
+// Function to make a DELETE request to the server to delete data
 async function deleteData(filename) {
     return await req.delete(`/data/${filename}`)
 }
 
+// Function to get a list of files from the server
 async function getFileList(pre_data = "") {
     return await req.get("/filelist", {
         params: {
@@ -75,7 +77,10 @@ async function getFileList(pre_data = "") {
         },
     });
 }
+
 // built-in method
+// Filtering/Independent Component Analysis/Reference/Resample/
+// Power Spectral Density/Differential Entropy/Frequency/Time-Frequency
 async function getFilter(filename, channels, preData, config = {}) {
     let res = await req.get(`/filter/${filename}`, {
         params: delEmptyItems({
@@ -245,6 +250,7 @@ async function getAllTaskStatus() {
     return await getTaskStatus()
 }
 
+// Get the data processed by the pipeline
 async function getTaskData(taskId, filename, fileType, onDownloadProgress) {
     return await req.get(`/task/${taskId}/${filename}`, {
         params: {file_type: fileType},
@@ -253,10 +259,12 @@ async function getTaskData(taskId, filename, fileType, onDownloadProgress) {
     });
 }
 
+// create pipeline task
 async function postTask(task) {
     return await req.post('/task', task)
 }
 
+// delete pipeline task
 export async function deleteTask(taskId) {
     return await req.delete(`/task/${taskId}`)
 }

@@ -11,6 +11,9 @@ class PSD(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def get(self, **kwargs):
+        """
+        Get PSD data
+        """
         data, is_none = get_data(feature_ext="PSD", **kwargs)
         file_type = kwargs['params']['file_type']
         if is_none:
@@ -20,6 +23,9 @@ class PSD(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='PSD')
     def post(self, **kwargs):
+        """
+        PSD analysis of data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

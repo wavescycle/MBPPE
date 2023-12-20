@@ -16,6 +16,7 @@ class Plugin(Resource):
         return jsonify(list(plugins))
 
     def post(self):
+        # Save the uploaded plugin and dynamically load it as a module
         if 'file' not in request.files:
             return 'No file'
         file = request.files['file']
@@ -54,11 +55,13 @@ class PluginHandler(Resource):
 
         raw = copy.deepcopy(source)
         plugin = PM.get_plugin(plugin_name)
-
+        #  preprocess the data with plugin
         if plugin_type == 'Pre_Process':
             storage[storage_type] = plugin.process(raw[channels], plugin_params, info)
+        #  extract features from the data with plugin
         elif plugin_type == 'Feature_Ext':
             storage[storage_type][plugin_name] = plugin.extract(raw[channels], plugin_params, info)
+        # visualize the data and return the data URI of the image
         elif plugin_type == 'Visualization':
             plt = plugin.visualization(raw[channels], plugin_params, info=None)
             buf = io.BytesIO()

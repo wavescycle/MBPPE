@@ -6,6 +6,7 @@ import pywt
 
 
 def power_spectrum(data, fs=200):
+    # Use Welch's method to estimate power spectral density (PSD)
     f, Pxx = welch(data, fs, nperseg=1024, detrend=False)
     return np.vstack([f, np.log10(Pxx)])
 
@@ -17,14 +18,17 @@ def de(data, fs=200, win=200):
     win: window size
     return ndarray [n*(m//win)*5]
     """
+    # Define frequency ranges for EEG bands
     delta = [1, 4]
     theta = [4, 8]
     alpha = [8, 14]
     beta = [14, 31]
     gamma = [31, 50]
     constant = np.log(2 * np.pi * np.e / win) / 2
+    # Initialize an array to store the differential entropy values
     deArray = np.zeros((data.shape[0], data.shape[1] // win, 5))
     for idx, val in enumerate(data):
+        # Remove extra samples that don't fit into a full window
         t = len(val) % win
         if t:
             val = val[:-t]
@@ -36,6 +40,7 @@ def de(data, fs=200, win=200):
         for i, v in enumerate([delta, theta, alpha, beta, gamma]):
             start = int(points_per_freq * v[0])
             end = int(points_per_freq * v[1])
+            # Calculate the energy in the current band
             e = np.sum(rfft_val[:, start:end] ** 2, axis=1) / (end - start + 1)
             de = np.log(e) / 2 + constant
             deArray[idx, :, i] = de
@@ -44,6 +49,7 @@ def de(data, fs=200, win=200):
 
 def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None):
     all_data = []
+    # Calculate the frequency bandwidth
     freq_band = fs / (2 ** maxlevel)
     if isinstance(iter_freq, str):
         iter_freq = json.loads(iter_freq.replace('\'', "\""))
@@ -76,14 +82,17 @@ def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None)
             },
         ]
     print(iter_freq)
-
+    # If channel is not specified, perform the decomposition on all channels
     if channel is None:
         channel = range(data.shape[0])
 
     for ch in channel:
+        # Perform the wavelet packet decomposition
         wp = pywt.WaveletPacket(data=data[ch], wavelet=wavename, mode='symmetric', maxlevel=8)
+        # Get the list of nodes at the specified level in the wavelet packet tree
         freq_tree = [node.path for node in wp.get_level(maxlevel, 'freq')]
         single_data = []
+        # Assign the data for the nodes that fall within the current frequency band to the new wavelet packet object
         for it in range(len(iter_freq)):
             new_wp = pywt.WaveletPacket(data=None, wavelet=wavename, mode='symmetric', maxlevel=maxlevel)
             for i in range(len(freq_tree)):

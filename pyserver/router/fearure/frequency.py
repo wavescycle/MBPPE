@@ -13,6 +13,9 @@ class Frequency(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     @init_channels('Freq')
     def get(self, **kwargs):
+        """
+        Get Differential Entropy Data
+        """
         data, is_none = get_data(feature_ext="Freq", **kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -23,6 +26,7 @@ class Frequency(Resource):
         if is_none:
             abort(400, 'You need do Frequency first')
         else:
+            # Add user-defined band to response header for subsequent use
             band_list = kwargs['info']['band_list']
 
             response = make_response(
@@ -35,6 +39,9 @@ class Frequency(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Freq')
     @init_channels('Freq')
     def post(self, **kwargs):
+        """
+        Frequency analysis of data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

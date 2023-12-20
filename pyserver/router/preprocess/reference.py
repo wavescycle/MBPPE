@@ -11,6 +11,9 @@ class Reference(Resource):
     @init_data(RefSchema, storage_type='Ref')
     @init_channels('Ref')
     def get(self, **kwargs):
+        """
+        Get Reference data
+        """
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -21,6 +24,9 @@ class Reference(Resource):
     @init_data(RefSchema, storage_type='Ref')
     @init_channels('Ref')
     def post(self, **kwargs):
+        """
+        Reference to the data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         params = kwargs['params']

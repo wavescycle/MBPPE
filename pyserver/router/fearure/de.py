@@ -11,6 +11,9 @@ class DE(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
     def get(self, **kwargs):
+        """
+        Get Differential Entropy Data
+        """
         data, is_none = get_data(feature_ext="DE", **kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -23,6 +26,9 @@ class DE(Resource):
 
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='DE')
     def post(self, **kwargs):
+        """
+        Differential entropy analysis of data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

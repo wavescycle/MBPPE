@@ -11,6 +11,9 @@ class ICA(Resource):
 
     @init_data(BasicSchema, storage_type='ICA')
     def get(self, **kwargs):
+        """
+        Get ICA data
+        """
         data, is_none = get_data(**kwargs)
         need_axis = kwargs['params']['need_axis']
         sample_rate = kwargs['info']['sample_rate']
@@ -23,6 +26,9 @@ class ICA(Resource):
 
     @init_data(BasicSchema, storage_type='ICA')
     def post(self, **kwargs):
+        """
+        ICA for data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         storage_type = kwargs['modify_storage_type']

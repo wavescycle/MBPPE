@@ -13,6 +13,9 @@ class TimeFrequency(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
     @init_channels('Time_Freq')
     def get(self, **kwargs):
+        """
+        Get TimeFrequency Data
+        """
         data, is_none = get_data(feature_ext="Time_Freq", **kwargs)
         info = kwargs['info']
         params = kwargs['params']
@@ -25,7 +28,7 @@ class TimeFrequency(Resource):
         if is_none:
             abort(400, 'You need do Time_Freq first')
 
-        # Visualisation
+        # Calculate the maximum value in a segment for visualization
         if start is not None or end is not None:
             cwt_scales = 20
             scale = fs * cwt_scales
@@ -47,6 +50,9 @@ class TimeFrequency(Resource):
     @init_data(BasicSchema, storage_path="Feature_Ext", storage_type='Time_Freq')
     @init_channels('Time_Freq')
     def post(self, **kwargs):
+        """
+        TimeFrequency analysis of data
+        """
         source = kwargs['source']
         storage = kwargs['storage']
         info = kwargs['info']

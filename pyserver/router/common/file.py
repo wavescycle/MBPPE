@@ -7,6 +7,9 @@ from pyserver.common.constant import DATA_STORAGE
 
 class FileList(Resource):
     def get(self):
+        """
+        Get the names of all uploaded files
+        """
         params = request.args
         try:
             BasicSchema(unknown=EXCLUDE).load(params)
@@ -19,6 +22,9 @@ class FileList(Resource):
 
 class FileTreeList(Resource):
     def get(self):
+        """
+        Get file information, including name and the corresponding processing method
+        """
         file_trees = []
         for k, v in DATA_STORAGE.items():
             temp = {
@@ -36,13 +42,3 @@ class FileTreeList(Resource):
             temp['data_type']['Feature_Ext'] = new_dict
             file_trees.append(temp)
         return jsonify(file_trees)
-
-
-class FileStatus(Resource):
-    def get(self):
-        file_status = list()
-        for k in DATA_STORAGE.keys():
-            file_status.append({
-                'Filename': k
-            })
-        return jsonify(file_status)

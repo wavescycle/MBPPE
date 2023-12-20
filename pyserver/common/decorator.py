@@ -1,3 +1,6 @@
+"""
+This file is used to define decorators to handle data requests and conversions
+"""
 from marshmallow import EXCLUDE, Schema
 from pyserver.common.constant import DATA_STORAGE, DATA_STORAGE_TEMPLATE
 from flask import request
@@ -5,6 +8,15 @@ import copy
 
 
 def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', source_path='Pre_Process'):
+    """
+        Pre-processing of data storage locations based on request parameters
+        Args:
+        schema: Specifies the data schema used for structuring the data.
+        storage_type: Specifies the storage type.
+        storage_path: Specifies the storage path, where the data will be stored.
+        source_path: Specifies the source path, from where the data originates.
+    """
+
     def decorator(fuc):
         def wrapper(*args, **kwargs):
             temp_storage_type = storage_type
@@ -66,6 +78,10 @@ def init_data(schema=Schema, storage_type="Raw", storage_path='Pre_Process', sou
 
 
 def init_channels(method):
+    """
+    Remap the channel for proper handling of the selected channel data
+    """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             temp_method = method
