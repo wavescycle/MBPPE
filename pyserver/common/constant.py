@@ -65,3 +65,19 @@ COMMENTS data structure
 }
 '''
 COMMENTS = {}
+'''
+auth: 
+      2: manager, get/post/delete
+      1: reader Only: get
+      0: banned
+'''
+AUTH = {
+    'active': True,
+    'config': {
+        'eaf1b968-449e-48c1-9233-888ad35f46e7': 2,
+        'fa340bc5-8ef1-40f9-bf24-13491c6a8b95': {
+            'default': 1,
+            'data/.*/.*': 2,
+            'download': 1
+        }}
+}

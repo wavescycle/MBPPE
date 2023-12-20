@@ -1,6 +1,8 @@
 import numpy as np
 import io
 from scipy.io import savemat
+from pyserver.common.constant import AUTH
+import re
 
 
 def stream_data(data, axis=True, unit=1, file_type="npy"):
@@ -47,3 +49,30 @@ def get_data(feature_ext=None, **kwargs):
         return data, True
     else:
         return data[channels] if len(channels) > 0 else data, False
+
+
+def auth(req_path, req_method, api_key):
+    # Define the priority level for each HTTP method
+    METHODS = {
+        'GET': 1,
+        'POST': 2,
+        'DELETE': 2
+    }
+    # Check if the authentication is active
+    if AUTH.get('active'):
+        config = AUTH.get('config', {})
+        priority = config.get(api_key)
+        if not priority:
+            return "access denied", 401
+        method_priority = METHODS.get(req_method, 0)
+        # check if the method's priority is higher than the api_key's
+        if isinstance(priority, int):
+            if method_priority > priority:
+                return "access denied", 401
+        # check each path and level in the auth dictionary
+        elif isinstance(priority, dict):
+            for p, level in priority.items():
+                if re.match(p, req_path) and method_priority > level:
+                    return "access denied", 401
+            if method_priority > priority.get('default', 0):
+                return "access denied", 401

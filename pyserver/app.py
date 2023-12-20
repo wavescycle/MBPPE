@@ -2,7 +2,7 @@
 This file is used to accept requests and assign routes
 """
 # Import flask and cors
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_cors import CORS
 
@@ -12,12 +12,24 @@ from pyserver.router.preprocess import Filter, ICA, Resample, Reference
 from pyserver.router.fearure import PSD, DE, Frequency, TimeFrequency
 from pyserver.router.plugin import Plugin, PluginHandler
 from pyserver.router.pipline import Task
+# import auth
+from pyserver.common.utils import auth
 
 app = Flask(__name__)
 api = Api(app)
 
 # Enable CORS
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+@app.before_request
+def before_request_func():
+    # Authenticate the request
+    api_key = request.headers.get('api-key')
+    req_path = request.path
+    req_method = request.method
+    return auth(req_path, req_method, api_key)
+
 
 # Data Methods
 # Get data types that have been processed

@@ -7,6 +7,12 @@ class request {
             baseURL: `${URL}:${PORT}`,
             // timeout: 5000,
         });
+
+        // add api-key to request header
+        this._request.interceptors.request.use((config) => {
+            config.headers['api-key'] = localStorage.getItem("MBPPE-API-KEY") ?? "";
+            return config
+        })
     }
 
     async get(api, config = {params: {}}) {
