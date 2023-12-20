@@ -1,7 +1,7 @@
 const {app, BrowserWindow} = require("electron");
 const {USE_LOCAL_SERVER} = require("./src/config/config.json")
-const {spawn, execFile} = require("child_process")
-const kill = require("tree-kill")
+const {spawn, execFile, exec} = require("child_process")
+const treeKill = require("tree-kill")
 const path = require("path");
 const isDev = process.env.IS_DEV === "true";
 /**
@@ -20,7 +20,6 @@ app.on("ready", () => {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            // preload: path.join(__dirname, "preload.js"),
         },
     });
     if (isDev) {
@@ -33,7 +32,7 @@ app.on("ready", () => {
 
     // Start a local python server
     if (USE_LOCAL_SERVER) {
-        localSever = spawn("python", ["./python/app.py"]);
+        localSever = spawn("python", ["-m", "pyserver.app"]);
         // localSever = execFile(path.join(__dirname, "./server/server.exe"));
 
         localSever.stdout.on("data", (data) => {
@@ -50,7 +49,13 @@ app.on("ready", () => {
 // kill the python process when closing the client
 app.on("window-all-closed", () => {
     if (localSever) {
-        kill(localSever.pid)
+        treeKill(localSever.pid, 'SIGKILL', (err) => {
+            if (err) {
+                console.error('Failed to kill process tree:', err);
+            } else {
+                console.log('Process tree has been killed successfully.');
+            }
+            app.quit()
+        })
     }
-    app.quit()
 });

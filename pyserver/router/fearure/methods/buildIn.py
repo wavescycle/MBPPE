@@ -1,35 +1,10 @@
 import json
-from scipy.signal import welch, windows, resample_poly, firwin, lfilter
+from scipy.signal import welch, windows
 from scipy.fft import rfft, rfftfreq
-from sklearn.decomposition import FastICA
 import numpy as np
 import pywt
 
 
-def re_reference(data, mode='average', channel=None):
-    if mode == 'average':
-        average_reference = np.mean(data, axis=0)
-        return data - average_reference
-    elif mode == 'channel':
-        if isinstance(channel, list):
-            channel = channel[0]
-        return data - data[channel]
-    elif mode == 'ear':
-        return data - np.mean(data[channel], axis=0)
-
-
-def resample(data, fs, new_fs):
-    return resample_poly(data, new_fs, fs, axis=1)
-
-
-# pass filter
-def fir_filter(data, btype, low, high, numtaps=61, fs=200):
-    cutoff = list(filter(lambda it: it is not None, [low, high]))
-    b = firwin(numtaps, cutoff, pass_zero=btype, fs=fs)
-    return lfilter(b, [1.0], data)
-
-
-# power spectrum
 def power_spectrum(data, fs=200):
     f, Pxx = welch(data, fs, nperseg=1024, detrend=False)
     return np.vstack([f, np.log10(Pxx)])
@@ -151,8 +126,3 @@ def time_frequency(data, channel, fs=200, scale=20, wavename='cgau8'):
     final_shape = (temp.shape[0], np.prod(temp.shape[1:-1]), temp.shape[-1])
     #  (channel, sample*freq, 3)
     return temp.reshape(final_shape)
-
-
-# ICA
-def ica(data):
-    return FastICA().fit_transform(data.T).T
