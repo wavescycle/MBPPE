@@ -72,7 +72,7 @@ auth:
       0: banned
 '''
 AUTH = {
-    'active': True,
+    'active': False,
     'config': {
         'eaf1b968-449e-48c1-9233-888ad35f46e7': 2,
         'fa340bc5-8ef1-40f9-bf24-13491c6a8b95': {

@@ -11,7 +11,7 @@ from pyserver.router.common import Data, PreData, Comments, FileList, FileTreeLi
 from pyserver.router.preprocess import Filter, ICA, Resample, Reference
 from pyserver.router.fearure import PSD, DE, Frequency, TimeFrequency
 from pyserver.router.plugin import Plugin, PluginHandler
-from pyserver.router.pipline import Task
+from pyserver.router.pipeline import Task
 # import auth
 from pyserver.common.utils import auth
 

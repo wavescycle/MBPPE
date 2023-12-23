@@ -274,8 +274,7 @@
           <span class="dialog-footer">
             <el-button @click="decreaseIndex"
                        :disabled="currentTaskIndex===0">Pre</el-button>
-            <el-button @click="increaseIndex(currentTaskIndex===0?taskAddRef:taskStepRef)"
-                       :disabled="taskTabRef==='feature-ext'">Next</el-button>
+            <el-button @click="increaseIndex(currentTaskIndex===0?taskAddRef:taskStepRef)">Next</el-button>
             <el-button type="primary" @click="submitTask(taskStepRef)"
                        :disabled="currentTaskIndex===0">Confirm</el-button>
           </span>
