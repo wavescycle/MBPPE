@@ -323,7 +323,7 @@ class myChart {
                 },
                 tooltip: {
                     trigger: "axis",
-                    triggerOn: "none",
+                    // triggerOn: "none",
                     position: function (pos, params, el, elRect, size) {
                         var obj = {top: 40};
                         obj[["left", "right"][+(pos[0] < size.viewSize[0] / 2)]] = 100;

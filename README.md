@@ -16,6 +16,9 @@ following [link](https://nodejs.org/en).
 2. Install dependencies
 
 ```
+# Download Project
+git clone https://github.com/wavescycle/MBPPE.git
+
 cd MBPPE
 
 # Install Python Env
@@ -31,66 +34,23 @@ You can choose one of the following two methods to run the code.
 
 ```
 # 1. Dev with Client [Offline Mode]
-npm run dev
+npm run dev:local
 
 # 2. Dev with Broswer [Online Mode]
-npm run preview
-python ./python/app.py
+npm run dev:broswer
 ```
 
-> The first time you run `npm run dev`, a blank page may appear. This is because the program startup speed is faster
-> than the page load time. You can resolve this issue by running the command again.
+> The first time you run `npm run dev:local`, a blank page may appear. This is because the program startup speed is
+> faster than the page generate time. You can resolve this issue by running the command again.
+>
+> If you are using the `npm run dev:broswer` command, you need to access http://localhost:3000/ using your browser
+> according to the output log.
 
-## Project Structure
-
-The following is the primary structure of MBPPE, which may assist in enhancing your understanding of the code.
-
-```
-|   index.html  # Main structure of HTML
-|   main.js  # Primary process file for electron handling system-related tasks
-|   preload.js # Loads python server prior to app rendering, utilized for Offline Mode
-|   
-+---python # Server Code
-|   |   app.py   # Main file of the Flask application [router adapter]
-|   |   customSchema.py  # Custom schema for managing request parameters
-|   |   load.py  # Default methods for loading EEG files
-|   |   plugin.py  # Manager Plugin file uploaded by user
-|   |   process.py  # Inbuilt methods for processing/extracting EEG data
-|   |   utils.py  # Utility function library, used in the pipeline
-|   |   
-|   +---plugins
-|           demo.py # Example of a plugin
-|        
-|           
-\---src # Client Code
-    |     
-    +---config
-    |       config.json # Configuration file for custom server and specified EEG data for processing
-    |       
-    |       
-    +---utils # Client utilities
-    |       api.js # Functions for backend interface calls [interface Driver]
-    |       charts.js # Functions for chart generation
-    |       npy.js # Script to convert numpy data to JavaScript array
-    |       request.js # Functions for network requests
-    |       
-    \---views # UI of Client
-            BaseCharts.vue # Visualization
-            Dashboard.vue # Dashboard 
-            Feature.vue # Feature extraction
-            Home.vue
-            Pipeline.vue # Pipeline
-            Plugin.vue # Plugin 
-            PreProcess.vue # Pre-processing
-            Upload.vue  # Upload EEG data
-            
-```
-
-## User Guide
+## Preview
 
 ![dashboard](./demo/dashboard.png)
 
-Users can select modules according to their own needs.
+To access the complete user manual, please refer to the [MANUAL](./MANUAL.md).
 
 1. Dashboard: Used to display the data information that has been processed in the current system.
 2. Data Upload: Users can upload EEG data files in batches.
@@ -100,38 +60,100 @@ Users can select modules according to their own needs.
 6. Pipeline: Used for creating and monitoring batch task sequences for multiple tasks
 7. Plugin: Plugin methods, used for users to upload custom methods to meet more complex scenarios.
 
-## Plugin Introduction (**NEW**)
+## Project Structure
 
-You can write custom plugins as needed to suit complex processing scenarios.
+The following is the primary structure of MBPPE, which may assist in enhancing your understanding of the code.
 
-Plugins need to appear in the form of functions, with reader, process, and extract providing three methods of data
-reading, preprocessing, and feature extraction respectively. You can provide one or more methods in a plugin, and MBPPE
-will automatically call the corresponding methods according to different modules.
-
-Here is a simple example:
-
-```python
-'''
-data: EEG data
-params: User input parameters
-kwargs: EEG info, such as sample rate
-'''
-
-
-def reader(data, params, **kwargs):
-    print("reader")
-    # custom methods
-    return data
-
-
-def process(data, params, **kwargs):
-    print("process")
-    # custom methods
-    return data
-
-
-def extract(data, params, **kwargs):
-    print("feature")
-    # custom methods
-    return data
+```
+│  index.html # Main structure of HTML
+│  main.js # Electron's main process file for system tasks
+│  package.json # NodeJS dependencies
+│  requirements.txt # python dependencies
+│        
+│      
+├─pyserver # Server Code
+│  │  app.py  # Main file of the server (Flask application) [router adapter]
+│  │  __init__.py
+│  │  
+│  ├─common # Common methods
+│  │    constant.py # Constants and structures storage
+│  │    customSchema.py  # Custom schema for managing request parameters
+│  │    decorator.py #  Decorator functions (init_data, init_channel)
+│  │     __init__.py 
+│  │          
+│  ├─plugins # Plugin storage
+│  │    demo.py # Plugin example
+│  │    
+│  │          
+│  └─router # Server routes
+│    ├─common
+│    │    comment.py # Comment-related routes
+│    │    data.py # Data-related routes for data upload and download
+│    │    file.py # Routes for retrieving uploaded files list
+│    │    __init__.py
+│    │      
+│    ├─fearure # Feature extraction routes
+│    │  │  de.py # Differential entropy request handling routes
+│    │  │  frequency.py # Frequency analysis request handling routes
+│    │  │  psd.py #  Power spectral density request handling routes
+│    │  │  timefrequency.py # Time-frequency analysis request handling routes
+│    │  │  __init__.py
+│    │  │  
+│    │  └─methods
+│    │      buildIn.py # Differential entropy, frequency, psd, time-frequency methods implementation
+│    │      __init__.py
+│    │      
+│    │                    
+│    ├─pipeline # Pipeline routes
+│    │  │  pipeline.py # Pipeline request handling routes
+│    │  │  __init__.py
+│    │  │  
+│    │  └─methods
+│    │      buildIn.py # Asynchronous methods for pipeline
+│    │      utils.py # Tool for parsing uploaded task information in pipeline
+│    │      __init__.py
+│    │      
+│    │          
+│    ├─plugin # Plugin routes
+│    │    manager.py # Plugin methods for registering, getting, and deleting plugins
+│    │    plugin.py # Plugin request handling routes
+│    │    __init__.py
+│    │    
+│    │          
+│    └─preprocess # Preprocessing routes
+│        │  filter.py # Filter request handling routes
+│        │  ica.py # Independent Component Analysis request handling routes
+│        │  reference.py # Reference request handling routes
+│        │  resample.py # Resample request handling routes
+│        │  __init__.py
+│        │  
+│        └─methods
+│            buildIn.py # Filter, ICA, reference, resample methods implementation
+│            __init__.py
+│            
+│                       
+└─src #  Client-side code
+    │  
+    ├─components
+    │      Sidebar.vue # Side navigation bar component
+    │      
+    ├─config
+    │      config.json # Custom server address configuration file
+    │      
+    │      
+    ├─utils # Client utilities
+    │      api.js # Functions for backend interface calls [interface Driver]
+    │      charts.js # Functions for chart generation
+    │      npy.js # Script to convert numpy data to JavaScript array
+    │      request.js  # Functions for network requests
+    │      
+    └─views # UI of Client
+            BaseCharts.vue # Visualization UI
+            Dashboard.vue # Dashboard UI
+            Feature.vue # Feature extraction UI
+            Home.vue
+            Pipeline.vue # Pipeline UI
+            Plugin.vue # Plugin UI
+            PreProcess.vue  # Pre-processing UI
+            Upload.vue # Upload EEG data UI                 
 ```
