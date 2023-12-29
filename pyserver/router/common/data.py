@@ -105,14 +105,18 @@ class Load:
             return pad(data, mode)
 
     @staticmethod
-    def npz(file):
+    def npz(file, mode=None):
         return pickle.loads(file["data"]).values()
 
     @staticmethod
-    def xlsx(file):
+    def xlsx(file, mode=None):
         for table in file.sheet():
             nrows = table.nrows
             return np.array([x for j in range(nrows) for x in table.row_values(j)])
+
+    @staticmethod
+    def npy(file, mode=None):
+        return np.load(file)
 
 
 def truncate(data):

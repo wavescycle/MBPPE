@@ -6,7 +6,6 @@
           class="upload"
           action=""
           multiple
-          accept=".mat"
           ref="upload"
           :http-request="uploadFile"
           :auto-upload="false"

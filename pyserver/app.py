@@ -69,5 +69,5 @@ api.add_resource(PluginHandler, '/pluginhandler/<string:plugin>/<string:filename
 api.add_resource(Comments, '/comments/<string:pipeline_id>')
 
 if __name__ == '__main__':
-    app.debug = True
+    # app.debug = True
     app.run()
