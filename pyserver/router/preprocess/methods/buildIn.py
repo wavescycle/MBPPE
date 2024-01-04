@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import resample_poly, firwin, lfilter
+from scipy.signal import resample_poly, firwin, lfilter, butter, filtfilt
 from sklearn.decomposition import FastICA
 
 
@@ -46,7 +46,7 @@ def resample(data, fs, new_fs):
 
 
 # pass filter
-def fir_filter(data, btype, low, high, numtaps=61, fs=200):
+def filters(data, btype, low, high, order=6, numtaps=61, fs=200, filter_type='FIR'):
     """
        Filter the EEG data using FIR filter.
 
@@ -69,8 +69,13 @@ def fir_filter(data, btype, low, high, numtaps=61, fs=200):
            The filtered EEG data.
        """
     cutoff = list(filter(lambda it: it is not None, [low, high]))
-    b = firwin(numtaps, cutoff, pass_zero=btype, fs=fs)
-    return lfilter(b, [1.0], data)
+    if filter_type == 'FIR':
+        b = firwin(numtaps, cutoff, pass_zero=btype, fs=fs)
+        return lfilter(b, [1.0], data)
+    else:
+        cutoff = list(filter(lambda it: it is not None, [low, high]))
+        b, a = butter(order, cutoff, btype, fs=fs)
+        return filtfilt(b, a, data)
 
 
 def ica(data):

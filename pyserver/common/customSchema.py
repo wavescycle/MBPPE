@@ -39,6 +39,7 @@ class FilterSchema(BaseSchema):
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
     channels = fields.List(fields.Int, required=True, data_key="channels")
+    filter_type = fields.Str(data_key="filter_type", validate=OneOf((["FIR", "IIR"])))
 
 
 class BasicSchema(BaseSchema):
@@ -84,6 +85,7 @@ class AsyncFilterSchema(Schema):
     method = fields.Str(data_key="method", validate=OneOf((["lowpass", "highpass", "bandpass"])))
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
+    filter_type = fields.Str(data_key="filterType", validate=OneOf((["FIR", "IIR"])))
 
 
 class AsyncRefSchema(Schema):

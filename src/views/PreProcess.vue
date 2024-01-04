@@ -37,6 +37,16 @@
         </el-select>
       </el-form-item>
       <el-form-item
+          label="Filter Type"
+          prop="filterType"
+          v-if="form.process === 'Filter'"
+      >
+        <el-select v-model="form.filterType" placeholder="Select">
+          <el-option key="FIR" label="FIR" value="FIR"></el-option>
+          <el-option key="IIR" label="Butterworth" value="IIR"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item
           :label="label.low"
           prop="low"
           v-if="
@@ -192,6 +202,7 @@ export default {
       preData: [{required: true, message: "Select the pre data", trigger: "blur"}],
       low: [{required: true, message: "Enter the frequency", trigger: "blur"}],
       high: [{required: true, message: "Enter the frequency", trigger: "blur"}],
+      filterType: [{required: true, message: "Select filter type", trigger: "blur"}]
     };
     const refMode = ["average", "channel", "ear"]
     const formRef = ref(null);
@@ -205,6 +216,7 @@ export default {
       low: "",
       high: "",
       filter: false,
+      filterType: "",
       fileList: [],
       preData: "",
       preDataList: [],
@@ -260,7 +272,7 @@ export default {
           if (process === "Filter") {
             const low = form.low;
             const high = form.high;
-            res = await postFilter(name, channels, methods, low, high, form.preData);
+            res = await postFilter(name, channels, methods, low, high, form.preData, form.filterType);
           } else if (process === "ICA") {
             res = await postICA(name, form.preData);
           } else if (process === "Reference") {

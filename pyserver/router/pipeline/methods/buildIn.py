@@ -3,7 +3,7 @@ from marshmallow import EXCLUDE
 from pyserver.common.customSchema import AsyncFilterSchema, AsyncRefSchema, SampleSchema, AsyncFreqSchema, \
     AsyncPluginSchema
 from pyserver.router.plugin.manager import PM
-from pyserver.router.preprocess.methods import fir_filter, ica, resample, re_reference
+from pyserver.router.preprocess.methods import filters, ica, resample, re_reference
 from pyserver.router.fearure.methods import power_spectrum, de, frequency, time_frequency
 
 """
@@ -16,7 +16,8 @@ def async_filter(data, info, **kwargs):
     low = info.get('low')
     high = info.get('high')
     method = info['method']
-    return fir_filter(data, btype=method, low=low, high=high, fs=kwargs['sample_rate'])
+    filter_type = info['filter_type']
+    return filters(data, btype=method, low=low, high=high, fs=kwargs['sample_rate'], filter_type=filter_type)
 
 
 def async_ica(data, info, **kwargs):

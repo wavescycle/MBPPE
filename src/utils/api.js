@@ -81,11 +81,12 @@ async function getFileList(pre_data = "") {
 // built-in method
 // Filtering/Independent Component Analysis/Reference/Resample/
 // Power Spectral Density/Differential Entropy/Frequency/Time-Frequency
-async function getFilter(filename, channels, preData, config = {}) {
+async function getFilter(filename, channels, preData, filterType, config = {}) {
     let res = await req.get(`/filter/${filename}`, {
         params: delEmptyItems({
             channels: channels,
             pre_data: preData,
+            filter_type: filterType,
             ...config
         }),
         responseType: "arraybuffer",
@@ -96,7 +97,7 @@ async function getFilter(filename, channels, preData, config = {}) {
     return decodeArrayBuffer(res);
 }
 
-async function postFilter(filename, channels, method, low, high, preData) {
+async function postFilter(filename, channels, method, low, high, preData, filterType) {
     return await req.post(
         `/filter/${filename}`,
         delEmptyItems({
@@ -104,7 +105,8 @@ async function postFilter(filename, channels, method, low, high, preData) {
             method: method,
             low: low,
             high: high,
-            pre_data: preData
+            pre_data: preData,
+            filter_type: filterType
         })
     );
 }

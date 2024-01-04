@@ -114,6 +114,17 @@
                     </el-select>
                   </el-form-item>
                   <el-form-item
+                      label="Filter Type"
+                      prop="info.filterType"
+                      v-if="taskStepInfo.method === 'Filter'"
+                      required
+                  >
+                    <el-select v-model="taskStepInfo.info.filterType" placeholder="Select">
+                      <el-option key="FIR" label="FIR" value="FIR"></el-option>
+                      <el-option key="IIR" label="Butterworth" value="IIR"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item
                       :label="label.low"
                       prop="info.low"
                       v-if="
