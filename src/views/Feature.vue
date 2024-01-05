@@ -80,6 +80,16 @@
             type="textarea"
         />
       </el-form-item>
+      <el-form-item label="Advance Params" v-if="form.method!=='Plugin'&&form.method!=='DE'"
+                    prop="advanceParams">
+        <el-input
+            style="width: 300px"
+            v-model="form.advanceParams"
+            :rows="2"
+            type="textarea"
+            placeholder="Need JSON format"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
         <el-button @click="onReset">Reset</el-button>
@@ -118,7 +128,8 @@ export default {
       bandList: "",
       preDataList: [],
       plugin: "",
-      pluginParams: ""
+      pluginParams: "",
+      advanceParams: ""
     });
     const pluginList = ref([])
 
@@ -152,18 +163,22 @@ export default {
           if (form.channels.length === 0) {
             form.channels = CH_NAMES.map((e, i) => i)
           }
+          const advanceParams = form.advanceParams && JSON.parse(form.advanceParams);
           switch (form.method) {
             case "PSD":
-              res = await postPSD(form.name, form.preData);
+              res = await postPSD(form.name, form.preData, {advance_params: advanceParams});
               break;
             case "DE":
               res = await postDE(form.name, form.preData);
               break;
             case "Frequency":
-              res = await postFrequency(form.name, form.channels, form.preData, {band_list: form.bandList})
+              res = await postFrequency(form.name, form.channels, form.preData, {
+                band_list: form.bandList,
+                advance_params: advanceParams
+              })
               break;
             case "TimeFrequency":
-              res = await postTimeFrequency(form.name, form.channels, form.preData)
+              res = await postTimeFrequency(form.name, form.channels, form.preData, {advance_params: advanceParams})
               break
             case "Plugin":
               res = await postPluginHandler(form.name, form.channels, form.preData, {

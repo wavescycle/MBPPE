@@ -62,5 +62,5 @@ class TimeFrequency(Resource):
         channels = params['channels']
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['Time_Freq'] = time_frequency(raw, channels, fs=freq)
+        storage[storage_type]['Time_Freq'] = time_frequency(raw, channels, fs=freq, **params['advance_params'])
         return 'OK'

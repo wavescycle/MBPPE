@@ -43,5 +43,5 @@ class Filter(Resource):
         filter_type = params['filter_type']
         # filter data
         storage[storage_type] = filters(raw[channels], btype=method, low=params['low'], high=params['high'],
-                                        fs=info['sample_rate'], filter_type=filter_type)
+                                        fs=info['sample_rate'], filter_type=filter_type, **params['advance_params'])
         return 'OK'

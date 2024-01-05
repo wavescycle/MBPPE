@@ -56,5 +56,6 @@ class Frequency(Resource):
             info['band_list'] = ['Delta', 'Theta', 'Alpha', 'Beta', 'Gamma']
         else:
             info['band_list'] = [item['name'] for item in json.loads(band_list.replace('\'', "\""))]
-        storage[storage_type]['Freq'] = frequency(raw, channels, fs=freq, iter_freq=band_list)
+        storage[storage_type]['Freq'] = frequency(raw, channels, fs=freq, iter_freq=band_list,
+                                                  **params['advance_params'])
         return 'OK'

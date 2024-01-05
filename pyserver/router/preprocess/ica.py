@@ -1,4 +1,4 @@
-from pyserver.common.decorator import init_data
+from pyserver.common.decorator import init_data, init_channels
 from pyserver.common.customSchema import BasicSchema
 from pyserver.common.utils import stream_data, get_data
 from flask import send_file, abort
@@ -10,6 +10,7 @@ from .methods import ica
 class ICA(Resource):
 
     @init_data(BasicSchema, storage_type='ICA')
+    @init_channels("ICA")
     def get(self, **kwargs):
         """
         Get ICA data
@@ -25,12 +26,15 @@ class ICA(Resource):
                              mimetype="application/octet-stream")
 
     @init_data(BasicSchema, storage_type='ICA')
+    @init_channels("ICA")
     def post(self, **kwargs):
         """
         ICA for data
         """
         source = kwargs['source']
         storage = kwargs['storage']
+        params = kwargs['params']
         storage_type = kwargs['modify_storage_type']
-        storage[storage_type] = ica(copy.deepcopy(source))
+        channels = params['channels']
+        storage[storage_type] = ica(copy.deepcopy(source)[channels], **params['advance_params'])
         return 'OK'

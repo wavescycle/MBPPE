@@ -26,7 +26,7 @@ def re_reference(data, mode='average', channel=None):
         return data - np.mean(data[channel], axis=0)
 
 
-def resample(data, fs, new_fs):
+def resample(data, fs, new_fs, **kwargs):
     """
     Resample
 
@@ -42,11 +42,11 @@ def resample(data, fs, new_fs):
     numpy array
         The resampled EEG data.
     """
-    return resample_poly(data, new_fs, fs, axis=1)
+    return resample_poly(data, new_fs, fs, axis=1, **kwargs)
 
 
 # pass filter
-def filters(data, btype, low, high, order=6, numtaps=61, fs=200, filter_type='FIR'):
+def filters(data, btype, low, high, fs=200, filter_type='FIR', **kwargs):
     """
        Filter the EEG data using FIR filter.
 
@@ -59,7 +59,6 @@ def filters(data, btype, low, high, order=6, numtaps=61, fs=200, filter_type='FI
            The low cutoff frequency.
        high: int, float
            The high cutoff frequency.
-       numtaps: int
            The length of the filter.
        fs: int
            The sample rate.
@@ -68,17 +67,19 @@ def filters(data, btype, low, high, order=6, numtaps=61, fs=200, filter_type='FI
        numpy array
            The filtered EEG data.
        """
+    default_params = {"numtaps": 61} if filter_type == 'FIR' else {"N": 6}
+    default_params.update(kwargs)
     cutoff = list(filter(lambda it: it is not None, [low, high]))
     if filter_type == 'FIR':
-        b = firwin(numtaps, cutoff, pass_zero=btype, fs=fs)
-        return lfilter(b, [1.0], data)
+        b = firwin(cutoff=cutoff, pass_zero=btype, fs=fs, **default_params)
+        a = [1.0]
     else:
         cutoff = list(filter(lambda it: it is not None, [low, high]))
-        b, a = butter(order, cutoff, btype, fs=fs)
-        return filtfilt(b, a, data)
+        b, a = butter(Wn=cutoff, btype=btype, fs=fs, **default_params)
+    return filtfilt(b, a, data)
 
 
-def ica(data):
+def ica(data, **kwargs):
     """
        Apply Independent Component Analysis (ICA) to the EEG data.
 
@@ -90,4 +91,4 @@ def ica(data):
        numpy array
            The transformed EEG data after ICA.
        """
-    return FastICA().fit_transform(data.T).T
+    return FastICA(**kwargs).fit_transform(data.T).T

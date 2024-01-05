@@ -109,7 +109,6 @@
       <el-form-item
           label="Channels"
           prop="channels"
-          v-if="form.process !== 'ICA'&&form.process !== 'Resample'"
       >
         <el-select
             v-model="form.channels"
@@ -171,6 +170,17 @@
             type="textarea"
         />
       </el-form-item>
+      <el-form-item label="Advance Params" v-if="form.process!=='Plugin'&&form.process!=='Reference'"
+                    prop="advanceParams">
+        <el-input
+            style="width: 300px"
+            v-model="form.advanceParams"
+            :rows="2"
+            type="textarea"
+            placeholder="Need JSON format"
+        />
+      </el-form-item>
+
       <el-form-item>
         <el-button type="primary" @click="onSubmit">Submit</el-button>
         <el-button @click="onReset">Reset</el-button>
@@ -202,7 +212,7 @@ export default {
       preData: [{required: true, message: "Select the pre data", trigger: "blur"}],
       low: [{required: true, message: "Enter the frequency", trigger: "blur"}],
       high: [{required: true, message: "Enter the frequency", trigger: "blur"}],
-      filterType: [{required: true, message: "Select filter type", trigger: "blur"}]
+      filterType: [{required: true, message: "Select filter type", trigger: "blur"}],
     };
     const refMode = ["average", "channel", "ear"]
     const formRef = ref(null);
@@ -224,7 +234,8 @@ export default {
       refChannels: [],
       fs: null,
       plugin: "",
-      pluginParams: ""
+      pluginParams: "",
+      advanceParams: ""
     });
     const pluginList = ref([])
 
@@ -269,17 +280,22 @@ export default {
           let channels = form.channels;
           if (channels.length === 0) channels = CH_NAMES.map((e, i) => i);
           let res;
+          const advanceParams = form.advanceParams && JSON.parse(form.advanceParams);
           if (process === "Filter") {
             const low = form.low;
             const high = form.high;
-            res = await postFilter(name, channels, methods, low, high, form.preData, form.filterType);
+            res = await postFilter(name, channels, methods, low, high, form.preData, form.filterType, advanceParams);
           } else if (process === "ICA") {
-            res = await postICA(name, form.preData);
+            res = await postICA(name, form.preData, channels, advanceParams);
           } else if (process === "Reference") {
             const refCh = Array.isArray(form.refChannels) ? form.refChannels : [form.refChannels]
             res = await postReference(name, channels, form.preData, {mode: form.refMode, ref_ch: refCh})
           } else if (process === "Resample") {
-            res = await postResample(name, form.preData, {new_fs: form.fs})
+            res = await postResample(name, form.preData, {
+              new_fs: form.fs,
+              advance_params: advanceParams,
+              channels: channels
+            })
           } else if (process === "Plugin") {
             res = await postPluginHandler(name, channels, form.preData, {
               plugin: form.plugin,

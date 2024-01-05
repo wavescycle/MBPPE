@@ -5,9 +5,11 @@ import numpy as np
 import pywt
 
 
-def power_spectrum(data, fs=200):
+def power_spectrum(data, fs=200, **kwargs):
     # Use Welch's method to estimate power spectral density (PSD)
-    f, Pxx = welch(data, fs, nperseg=1024, detrend=False)
+    default_params = {'nperseg': 1024, 'detrend': False}
+    default_params.update(kwargs)
+    f, Pxx = welch(data, fs, **default_params)
     return np.vstack([f, np.log10(Pxx)])
 
 
@@ -47,7 +49,10 @@ def de(data, fs=200, win=200):
     return deArray
 
 
-def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None):
+def frequency(data, channel, fs=200, iter_freq=None, **kwargs):
+    default_params = {'wavelet': 'db4', 'maxlevel': 8}
+    default_params.update(kwargs)
+    maxlevel = default_params['maxlevel']
     all_data = []
     # Calculate the frequency bandwidth
     freq_band = fs / (2 ** maxlevel)
@@ -88,13 +93,13 @@ def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None)
 
     for ch in channel:
         # Perform the wavelet packet decomposition
-        wp = pywt.WaveletPacket(data=data[ch], wavelet=wavename, mode='symmetric', maxlevel=8)
+        wp = pywt.WaveletPacket(data=data[ch], **default_params)
         # Get the list of nodes at the specified level in the wavelet packet tree
         freq_tree = [node.path for node in wp.get_level(maxlevel, 'freq')]
         single_data = []
         # Assign the data for the nodes that fall within the current frequency band to the new wavelet packet object
         for it in range(len(iter_freq)):
-            new_wp = pywt.WaveletPacket(data=None, wavelet=wavename, mode='symmetric', maxlevel=maxlevel)
+            new_wp = pywt.WaveletPacket(data=None, **default_params)
             for i in range(len(freq_tree)):
                 band_min = i * freq_band
                 band_max = band_min + freq_band
@@ -105,12 +110,17 @@ def frequency(data, channel, fs=200, wavename='db4', maxlevel=8, iter_freq=None)
     return np.array(all_data)
 
 
-def time_frequency(data, channel, fs=200, scale=20, wavename='cgau8'):
+def time_frequency(data, channel, fs=200, **kwargs):
+    default_params = {'wavelet': 'cgau8'}
+    default_params.update(kwargs)
+
+    scale = 20
+    wavename = default_params['wavelet']
     # pywt.cwt
     fc = pywt.central_frequency(wavename)
     cparam = 2 * fc * scale
     scales = cparam / np.arange(scale, 0, -1)
-    cwtmatr, frequencies = pywt.cwt(data[channel], scales, wavename, 1 / fs)
+    cwtmatr, frequencies = pywt.cwt(data[channel], scales, sampling_period=1 / fs, **default_params)
 
     # reverse the cwt matrix
     frequencies = np.array(frequencies)[::-1]

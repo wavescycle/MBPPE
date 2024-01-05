@@ -229,6 +229,16 @@
                         type="textarea"
                     />
                   </el-form-item>
+                  <el-form-item label="Advance Params" v-if="taskStepInfo.method!=='Plugin'"
+                                prop="info.advanceParams">
+                    <el-input
+                        style="width: 300px"
+                        v-model="taskStepInfo.info.advanceParams"
+                        :rows="2"
+                        type="textarea"
+                        placeholder="Need JSON format"
+                    />
+                  </el-form-item>
                 </el-tab-pane>
                 <el-tab-pane label="Feature Ext" name="feature-ext">
                   <el-form-item label="Method" prop="method" required>
@@ -274,6 +284,16 @@
                         v-model="taskStepInfo.info.pluginParams"
                         :rows="2"
                         type="textarea"
+                    />
+                  </el-form-item>
+                  <el-form-item label="Advance Params" v-if="taskStepInfo.method!=='Plugin'&&taskStepInfo.method!=='DE'"
+                                prop="info.advanceParams">
+                    <el-input
+                        style="width: 300px"
+                        v-model="taskStepInfo.info.advanceParams"
+                        :rows="2"
+                        type="textarea"
+                        placeholder="Need JSON format"
                     />
                   </el-form-item>
                 </el-tab-pane>

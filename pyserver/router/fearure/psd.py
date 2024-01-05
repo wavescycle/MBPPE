@@ -33,5 +33,6 @@ class PSD(Resource):
 
         raw = copy.deepcopy(source)
         freq = info['sample_rate']
-        storage[storage_type]['PSD'] = power_spectrum(raw, freq)
+        params = kwargs['params']
+        storage[storage_type]['PSD'] = power_spectrum(raw, freq, **params['advance_params'])
         return 'OK'

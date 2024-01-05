@@ -97,7 +97,7 @@ async function getFilter(filename, channels, preData, filterType, config = {}) {
     return decodeArrayBuffer(res);
 }
 
-async function postFilter(filename, channels, method, low, high, preData, filterType) {
+async function postFilter(filename, channels, method, low, high, preData, filterType, advanceParams) {
     return await req.post(
         `/filter/${filename}`,
         delEmptyItems({
@@ -106,7 +106,8 @@ async function postFilter(filename, channels, method, low, high, preData, filter
             low: low,
             high: high,
             pre_data: preData,
-            filter_type: filterType
+            filter_type: filterType,
+            advance_params: advanceParams
         })
     );
 }
@@ -119,10 +120,12 @@ async function getICA(filename, pre_data = "", config = {}) {
     return decodeArrayBuffer(res);
 }
 
-async function postICA(filename, pre_data = "") {
-    return await req.post(`/ica/${filename}`, {
+async function postICA(filename, pre_data = "", channels, advanceParams) {
+    return await req.post(`/ica/${filename}`, delEmptyItems({
         pre_data: pre_data,
-    });
+        channels: channels,
+        advance_params: advanceParams
+    }));
 }
 
 async function getPSD(filename, pre_data = "", config = {}) {
@@ -133,10 +136,11 @@ async function getPSD(filename, pre_data = "", config = {}) {
     return decodeArrayBuffer(res);
 }
 
-async function postPSD(filename, pre_data = "") {
-    return await req.post(`/psd/${filename}`, {
+async function postPSD(filename, pre_data = "", config = {}) {
+    return await req.post(`/psd/${filename}`, delEmptyItems({
         pre_data: pre_data,
-    });
+        ...config
+    }));
 }
 
 async function getDE(filename, pre_data = "", config = {}) {
@@ -177,11 +181,12 @@ async function getTimeFrequency(filename, channels, pre_data = "", config = {}) 
     return decodeArrayBuffer(res);
 }
 
-async function postTimeFrequency(filename, channels, pre_data = "") {
-    return await req.post(`/timefrequency/${filename}`, {
+async function postTimeFrequency(filename, channels, pre_data = "", config = {}) {
+    return await req.post(`/timefrequency/${filename}`, delEmptyItems({
         pre_data: pre_data,
         channels: channels,
-    });
+        ...config
+    }));
 }
 
 async function download(type, filename, onDownloadProgress, pre_data = "", config = {}) {
@@ -237,10 +242,10 @@ async function getResample(filename, channels, pre_data, config = {}) {
 }
 
 async function postResample(filename, pre_data, config = {}) {
-    return await req.post(`/resample/${filename}`, {
+    return await req.post(`/resample/${filename}`, delEmptyItems({
         pre_data: pre_data,
         ...config
-    })
+    }))
 }
 
 // Pipeline Task APIs

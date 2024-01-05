@@ -35,6 +35,8 @@ class Resample(Resource):
         storage_type = kwargs['modify_storage_type']
 
         raw = copy.deepcopy(source)
+        channels = params['channels']
         # filter data
-        storage[storage_type] = resample(raw, fs=info['sample_rate'], new_fs=params['new_fs'])
+        storage[storage_type] = resample(raw[channels], fs=info['sample_rate'], new_fs=params['new_fs'],
+                                         **params['advance_params'])
         return 'OK'

@@ -1,6 +1,8 @@
 """
 This file is used to define the schema to deserialize the request data into objects
 """
+import json
+
 from marshmallow import Schema, fields, pre_load
 from marshmallow.validate import OneOf
 
@@ -10,6 +12,8 @@ class BaseSchema(Schema):
     pre_data = fields.String(data_key="pre_data", missing="Raw")
     need_axis = fields.Boolean(data_key="need_axis", missing=False)
     file_type = fields.String(data_key="file_type", missing="npy")
+    advance_params = fields.Dict(data_key="advance_params", missing={})
+    channels = fields.List(fields.Int, data_key="channels", missing=[])
 
     # Handling channels in get requests
     @pre_load
@@ -38,12 +42,10 @@ class FilterSchema(BaseSchema):
     method = fields.Str(data_key="method", validate=OneOf((["lowpass", "highpass", "bandpass"])))
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
-    channels = fields.List(fields.Int, required=True, data_key="channels")
     filter_type = fields.Str(data_key="filter_type", validate=OneOf((["FIR", "IIR"])))
 
 
 class BasicSchema(BaseSchema):
-    channels = fields.List(fields.Int, data_key="channels", missing=[])
     start = fields.Int(data_key="start", missing=None)
     end = fields.Int(data_key="end", missing=None)
     band_list = fields.String(data_key="band_list", missing=None)
@@ -51,7 +53,6 @@ class BasicSchema(BaseSchema):
 
 # reference Schema
 class RefSchema(BaseSchema):
-    channels = fields.List(fields.Int, data_key="channels", missing=[])
     mode = fields.Str(data_key="mode", missing="average")
     ref_ch = fields.List(fields.Int, data_key="ref_ch", missing=[])
 
@@ -74,29 +75,42 @@ class SampleSchema(BaseSchema):
 
 
 class PluginSchema(BaseSchema):
-    channels = fields.List(fields.Int, required=True, data_key="channels")
     plugin_type = fields.Str(data_key="plugin_type",
                              validate=OneOf((["Reader", "Pre_Process", "Feature_Ext", "Visualization"])))
     plugin_params = fields.Str(data_key="plugin_params")
 
 
 # Schema in asynchronous
-class AsyncFilterSchema(Schema):
+class AsyncBaseSchema(Schema):
+    advance_params = fields.Dict(data_key="advanceParams", missing={})
+
+    @pre_load
+    def preload(self, value, **kwargs):
+        try:
+            advance_params = value.get("advanceParams")
+            if advance_params:
+                value["advanceParams"] = json.loads(advance_params)
+        except AttributeError as e:
+            pass
+        return value
+
+
+class AsyncFilterSchema(AsyncBaseSchema):
     method = fields.Str(data_key="method", validate=OneOf((["lowpass", "highpass", "bandpass"])))
     low = fields.Float(data_key="low", missing=None)
     high = fields.Float(data_key="high", missing=None)
     filter_type = fields.Str(data_key="filterType", validate=OneOf((["FIR", "IIR"])))
 
 
-class AsyncRefSchema(Schema):
+class AsyncRefSchema(AsyncBaseSchema):
     mode = fields.Str(data_key="mode", missing="average")
     ref_ch = fields.List(fields.Int, data_key="refChannels", missing=[])
 
 
-class AsyncFreqSchema(Schema):
+class AsyncFreqSchema(AsyncBaseSchema):
     band_list = fields.String(data_key="band_list", missing=None)
 
 
-class AsyncPluginSchema(Schema):
+class AsyncPluginSchema(AsyncBaseSchema):
     plugin = fields.String(data_key="plugin", required=True)
     plugin_params = fields.String(data_key="pluginParams", missing=None)
