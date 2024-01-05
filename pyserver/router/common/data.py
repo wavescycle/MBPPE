@@ -2,6 +2,7 @@ from pyserver.common.decorator import init_channels, init_data
 from pyserver.common.utils import stream_data, get_data
 from pyserver.common.customSchema import DataSchema
 from pyserver.common.constant import DATA_STORAGE
+from pyserver.router.plugin.manager import PM
 from flask import send_file, jsonify, request
 from flask_restful import Resource
 import numpy as np
