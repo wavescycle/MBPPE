@@ -57,10 +57,10 @@ class PluginHandler(Resource):
         plugin = PM.get_plugin(plugin_name)
         #  preprocess the data with plugin
         if plugin_type == 'Pre_Process':
-            storage[storage_type] = plugin.process(raw[channels], plugin_params, info)
+            storage[storage_type] = plugin.process(raw[channels], plugin_params, **{'info': info})
         #  extract features from the data with plugin
         elif plugin_type == 'Feature_Ext':
-            storage[storage_type][plugin_name] = plugin.extract(raw[channels], plugin_params, info)
+            storage[storage_type][plugin_name] = plugin.extract(raw[channels], plugin_params, **{'info': info})
         # visualize the data and return the data URI of the image
         elif plugin_type == 'Visualization':
             plt = plugin.visualization(raw[channels], plugin_params, info=None)

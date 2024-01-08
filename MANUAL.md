@@ -60,19 +60,23 @@ You can submit processing tasks or reset uncommitted processing parameters.
 > Users can pre-process specific files. However, please note that this panel operates synchronously, and thus you must
 > wait for data processing to complete.
 
-All pre-processing methods require the `PreData` parameter to be selected. This parameter is used for subsequent
-processing based on the pre-data.
+All process methods require the `PreData` parameter to be selected. This parameter is used for subsequent
+processing based on the pre-data. For example, if you select Filter for `PreData`, it means that subsequent processing
+will be based on Filter.
 
-For example, if you select Filter for `PreData`, it means that subsequent processing will be based on Filter.
-<img src="./demo/manual/preprocess.png" alt="preprocess" style="zoom:50%;" />
+On the other hand, `Advance Params` can be used to modify the underlying methods called
+by MBPPE.
+
+![Pre-Process](./demo/manual/preprocess.png)
 
 ### Filter
 
-The filter functionality uses the fir_filter method and requires several parameters:
+The filter functionality uses the `filters` method and requires several parameters:
 
-<img src="./demo/manual/filter.png" alt="filter" style="zoom:50%;" />
+<img src="./demo/manual/filter.png" alt="filter" style="width:40%;" />
 
 - [required] Filename: The name of the file to be filtered
+- [required] Filter Type: FIR or ButterWorth
 - [required] Filter: Filtering methods to be used
     - low-pass filtering
     - high-pass filtering
@@ -82,21 +86,24 @@ The filter functionality uses the fir_filter method and requires several paramet
   band-pass filtering is selected.
 - [required] PreData: The pre-data for filtering
 - [optional] Channels: The channels to be filtered, by default all channels are filtered
+- [optional] Advance Params: You need to refer to `scipy.singal.firwin` when using FIR, and `scipy.signal.butter` when
+  using butterWorth.
 
 ### Independent Component Analysis
 
 The ICA method is based on sklearn's FastICA method.
 
-<img src="./demo/manual/ica.png" alt="ica" style="zoom:50%;" />
+<img src="./demo/manual/ica.png" alt="ica" style="width:40%;" />
 
 - [required] Filename: The name of the file to undergo ICA
 - [required] PreData: The pre-data for ICA
+- [optional] Advance Params: You need to refer to `sklearn.decomposition.FastICA`.
 
 ### Reference
 
 The reference method requires the following parameters:
 
-<img src="./demo/manual/ref.png" alt="ref" style="zoom:50%;" />
+<img src="./demo/manual/ref.png" alt="ref" style="width:40%;" />
 
 - [required] Filename: The name of the file to be referenced
 - [required] PreData: The pre-data for referencing
@@ -111,23 +118,28 @@ The reference method requires the following parameters:
 
 The Resample method requires the following parameters:
 
-<img src="./demo/manual/resample.png" alt="resample" style="zoom:50%;" />
+<img src="./demo/manual/resample.png" alt="resample" style="width:40%;" />
 
 - [required] Filename: The name of the file to be resampled
 - [required] PreData: The pre-data for resampling
 - [required] Sampling Rating: The target sampling rate
+- [optional] Advance Params: You need to refer to `scipy.signal.resample_poly`.
 
 ## Feature Extraction
 
 MBBPE facilitates the extraction of Differential Entropy, Frequency, Power Spectral Density (PSD), and Time-Frequency
 features. It also supports the use of plug-ins for expansion.
 
+The functions of `PreData` and `Advance Params` are consistent with the parameter in the preprocessing stage.
+
+![Feature](./demo/manual/feature.png)
+
 ### Differential Entropy
 
 DE is implemented based on this [article](https://ieeexplore.ieee.org/document/6611075).The following parameters are
 necessary for the process:
 
-<img src="./demo/manual/de.png" alt="de" style="zoom:50%;" />
+<img src="./demo/manual/de.png" alt="de" style="width:40%;" />
 
 - [required] Filename: The name of the file to undergo DE.
 - [required] PreData: The pre-data for DE.
@@ -137,33 +149,36 @@ necessary for the process:
 We employ the wavelet packet transform for frequency conversion and require the following parameters for the
 process:
 
-<img src="./demo/manual/frequency.png" alt="frequency" style="zoom:50%;" />
+<img src="./demo/manual/frequency.png" alt="frequency" style="width:40%;" />
 
 - [required] Filename: The name of the file to undergo frequency analysis.
 - [required] PreData: The pre-data for frequency analysis.
 - [optional] Channels: Specific channels for frequency analysis. By default, all channels are included.
 - [optional] BandList: This is a customized frequency decomposition range. It should be a JSON array of names and
   frequency ranges.
+- [optional] Advance Params: You need to refer to `pywt.WaveletPacket`.
 
 ### Power spectral density
 
 We utilize scipy's welch method to compute the PSD, which requires the following parameters:
 
-<img src="./demo/manual/psd.png" alt="psd" style="zoom:50%;" />
+<img src="./demo/manual/psd.png" alt="psd" style="width:40%;" />
 
 - [required] Filename: The name of the file to undergo PSD.
 - [required] PreData: The pre-data for PSD.
+- [optional] Advance Params: You need to refer to `scipy.signal.welch`.
 
 ### Time-Frequency Analysis
 
 We perform a time-frequency transformation of the EEG data using the wavelet transform. This process requires the
 following parameters:
 
-<img src="./demo/manual/tf.png" alt="tf" style="zoom:50%;" />
+<img src="./demo/manual/tf.png" alt="tf" style="width:40%;" />
 
 - [required] Filename: The name of the file to undergo time-frequency analysis.
 - [required] PreData: The pre-data for time-frequency analysis.
 - [optional] Channels: Specific channels for time-frequency analysis. By default, all channels are included.
+- [optional] Advance Params: You need to refer to `pywt.cwt`.
 
 ## Plugin
 
@@ -215,7 +230,7 @@ method also creates a plot of a simple function.
 
 You can upload and manage plugins via the plugin module
 
-<img src="./demo/manual/plugin.png" alt="plugin" style="zoom:50%;" />
+![plugin](./demo/manual/plugin.png)
 
 Plugin allows users to utilize it like a built-in method, capable of both preprocessing and feature extraction. It
 accepts the following parameters:
@@ -226,7 +241,7 @@ accepts the following parameters:
 - [optional] Channels: By default, all channels are included.
 - [optional] Params: This is for custom parameters that will be passed into the plugin method.
 
-<img src="./demo/manual/plugin_params.png" alt="plugin_params" style="zoom:50%;" />
+<img src="./demo/manual/plugin_params.png" alt="plugin_params" style="width:40%;" />
 
 ## Pipeline
 
@@ -236,11 +251,11 @@ The Pipeline module allows for the creation, monitoring, and management of multi
 
 1. Begin by selecting the EEG signals and channel information that you would like to process.
 
-   <img src="./demo/manual/pipeline_create.png" alt="pipeline_create" style="zoom:50%;" />
+   <img src="./demo/manual/pipeline_create.png" alt="pipeline_create" style="width:40%;" />
 
 2. Next, choose the processing method. The chosen methods will be executed sequentially in the order you selected.
 
-   <img src="./demo/manual/pipeline_create2.png" alt="pipeline_create2" style="zoom:50%;" />
+   <img src="./demo/manual/pipeline_create2.png" alt="pipeline_create2" style="width:40%;" />
 
 ### 2. Task Panel
 
@@ -248,7 +263,7 @@ The first column in the task panel is a unique identifier, generated by the UUID
 the file currently being processed. Subsequent columns detail the processing methods. Completed sessions are marked in
 green. Black indicates that processing is ongoing, while gray indicates that the task is waiting to be processed.
 
-<img src="./demo/manual/pipeline.png" alt="pipeline" />
+![pipeline](./demo/manual/pipeline.png)
 
 ### 3. Task Information
 
@@ -256,7 +271,7 @@ The task information section provides detailed processing information for each f
 data, or delete the entire task. Information about the plot of the submitted task, including the channel and request
 parameters, is also displayed. Users can leave comments in this section for documentation or communication purposes.
 
-<img src="./demo/manual/pipeline_info.png" alt="pipeline_info" style="zoom:50%;" />
+<img src="./demo/manual/pipeline_info.png" alt="pipeline_info" style="width:20%;" />
 
 ## Access Control
 
@@ -292,7 +307,7 @@ methods to set it up:
 
 After the secret key is configured, it is necessary for the user to add it.
 
-<img src="./demo/manual/auth.png" alt="auth" style="zoom:50%;" />
+<img src="./demo/manual/auth.png" alt="auth" style="width:20%;" />
 
 ## Interactive Visualization
 

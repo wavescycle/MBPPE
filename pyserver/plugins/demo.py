@@ -1,22 +1,22 @@
-def reader(data, params, info):
+def reader(data, params, **kwargs):
     print("reader")
     # do some modify
     return data
 
 
-def process(data, params, info):
+def process(data, params, **kwargs):
     print("process")
     # do some modify
     return data
 
 
-def extract(data, params, info):
+def extract(data, params, **kwargs):
     print("feature")
     # do some modify
     return data
 
 
-def visualization(data, params, info):
+def visualization(data, params, **kwargs):
     import matplotlib.pyplot as plt
     import numpy as np
 

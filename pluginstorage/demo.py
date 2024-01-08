@@ -32,6 +32,4 @@ def visualization(data, params, **kwargs):
     # Plot x against y
     plt.plot(x, y)
 
-    # Create a BytesIO object and save the figure to it
-    # Return the BytesIO object
     return plt
